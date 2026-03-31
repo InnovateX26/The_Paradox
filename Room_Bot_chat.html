@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>StemVI | Room-Bot</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Playfair+Display:ital,wght@1,700;1,900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#9AB17A",
+              "on-primary": "#1e2511",
+              secondary: "#C3CC9B",
+              "on-secondary": "#1e2511",
+              dark: "#1e2511",
+              "dark-2": "#232b14",
+              "dark-3": "#191f0e",
+              "dark-4": "#0f1509",
+              surface: "#1e2511",
+              "on-surface": "#FBE8CE",
+              "on-surface-variant": "rgba(251, 232, 206, 0.7)",
+              outline: "rgba(154, 177, 122, 0.2)",
+            },
+            fontFamily: {
+              headline: ["Plus Jakarta Sans", "sans-serif"],
+              body: ["Plus Jakarta Sans", "sans-serif"],
+            },
+            borderRadius: { DEFAULT: "1rem", lg: "2rem", xl: "3rem", full: "9999px" },
+          },
+        },
+      }
+    </script>
+    <style>
+        :root {
+            --dark: #1e2511;
+            --dark-2: #232b14;
+            --dark-3: #191f0e;
+            --dark-4: #0f1509;
+            --sage: #9AB17A;
+            --sage-light: #C3CC9B;
+            --cream: #FBE8CE;
+            --glass: rgba(35, 43, 20, 0.6);
+            --glass-border: 1px solid rgba(195, 204, 155, 0.1);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: var(--glass-border);
+        }
+        .bot-bubble-glass {
+            background: rgba(35, 43, 20, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(154, 177, 122, 0.1);
+        }
+        .message-in {
+            animation: slideUp 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface overflow-hidden">
+<!-- TopNavBar -->
+<header class="fixed top-0 left-0 w-full z-50 bg-[#1e2511]/60 backdrop-blur-3xl border-b border-white/10">
+<nav class="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
+<div class="flex items-center gap-4">
+<span class="text-xl font-black text-primary font-headline tracking-tighter cursor-pointer" onclick="window.location.href='index.html'">StemVI</span>
+<div class="hidden sm:flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/5">
+<span class="relative flex h-2 w-2">
+<span class="ping-ring absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+</span>
+<span class="text-[10px] font-black uppercase tracking-widest text-primary">Lab Room</span>
+</div>
+</div>
+<div class="hidden lg:flex gap-8 items-center">
+<a class="text-on-surface/60 font-medium hover:text-primary transition-all text-sm" href="scan-explain.html">Scan</a>
+<a class="text-on-surface/60 font-medium hover:text-primary transition-all text-sm" href="Doubt_Bot.html">Doubt-Bot</a>
+<a class="text-on-surface/60 font-medium hover:text-primary transition-all text-sm" href="Flashcards.html">Flashcards</a>
+<a class="text-on-surface/60 font-medium hover:text-primary transition-all text-sm" href="Dashboard.html">Dashboard</a>
+</div>
+<div class="flex items-center gap-4">
+<button id="sign-out-btn" class="material-symbols-outlined text-primary p-2 hover:bg-white/10 rounded-full transition-all active:scale-90" title="Sign Out">logout</button>
+<button id="room-code-display" class="bg-primary text-dark px-6 py-2.5 rounded-xl font-headline font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg">
+                Room: <span id="room-id-text">#???-??</span>
+            </button>
+</div>
+</nav>
+</header>
+<div class="flex h-screen pt-20 pb-0 md:pb-0 overflow-hidden">
+<!-- SideNavBar / Sidebar -->
+<aside class="hidden lg:flex flex-col h-full w-72 p-6 space-y-6 bg-dark-2/80 backdrop-blur-2xl border-r border-white/5">
+<div class="px-2 py-4">
+<h2 class="font-headline text-xl font-black text-primary tracking-tighter uppercase">Active Rooms</h2>
+<p class="text-[10px] text-on-surface-variant font-black uppercase tracking-widest mt-1">Live Lab Sessions</p>
+</div>
+<div class="flex-1 overflow-y-auto space-y-4 custom-scrollbar" id="rooms-container">
+<!-- Room Items Dynamic -->
+<p class="text-on-surface-variant text-xs italic p-4 text-center">Loading rooms...</p>
+</div>
+<button class="w-full py-4 bg-primary text-dark rounded-xl font-headline font-black uppercase tracking-widest text-[10px] shadow-lg btn-hover-scale flex items-center justify-center gap-2" onclick="createRoom()">
+<span class="material-symbols-outlined text-sm">add</span>
+            New Room
+        </button>
+<div class="mt-auto p-4 bg-white/5 rounded-2xl border border-white/5 flex flex-col gap-4">
+    <div class="flex items-center gap-3 px-2">
+        <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-dark font-black tracking-tighter shadow-lg shadow-primary/20 shrink-0" id="user-avatar-initial">
+            ?
+        </div>
+        <div class="overflow-hidden">
+            <p class="text-sm font-bold text-on-surface truncate" id="user-name-display">Loading...</p>
+            <p class="text-[10px] text-on-surface-variant truncate font-medium" id="user-email-display">...</p>
+        </div>
+    </div>
+    <button id="sidebar-logout-btn" class="w-full py-2 bg-white/5 hover:bg-red-500/10 border border-white/5 hover:border-red-500/20 rounded-xl text-on-surface-variant hover:text-red-500 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-sm">logout</span>
+        Logout
+    </button>
+</div>
+</aside>
+<!-- Main Chat Area -->
+<main class="flex-1 flex flex-col h-full bg-dark-4 relative">
+<!-- Message Feed -->
+<div class="flex-1 overflow-y-auto px-6 py-8 space-y-10 flex flex-col scroll-smooth" id="chat-container">
+<!-- Empty State -->
+<div class="h-full flex flex-col items-center justify-center text-center space-y-6 opacity-40">
+<div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-4xl">groups</span>
+</div>
+<p class="text-on-surface-variant text-sm font-medium tracking-wide">Waiting for scientists to join... 🧪</p>
+</div>
+</div>
+<!-- Bottom Input Section -->
+<div class="p-8 bg-gradient-to-t from-dark-4 via-dark-4 to-transparent pt-20">
+    <div class="max-w-4xl mx-auto space-y-6">
+        <!-- Quick Replies -->
+        <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar justify-center">
+            <button class="whitespace-nowrap px-6 py-2.5 bg-white/5 hover:bg-white/10 text-on-surface-variant font-black text-[10px] uppercase tracking-widest rounded-xl border border-white/5 transition-all shadow-sm btn-hover-scale">
+                Numerical kaise aayega?
+            </button>
+            <button class="whitespace-nowrap px-6 py-2.5 bg-white/5 hover:bg-white/10 text-on-surface-variant font-black text-[10px] uppercase tracking-widest rounded-xl border border-white/5 transition-all shadow-sm btn-hover-scale">
+                Ek aur example do
+            </button>
+            <button class="whitespace-nowrap px-6 py-2.5 bg-white/5 hover:bg-white/10 text-on-surface-variant font-black text-[10px] uppercase tracking-widest rounded-xl border border-white/5 transition-all shadow-sm btn-hover-scale">
+                Exam ke liye kya important hai?
+            </button>
+        </div>
+        <!-- Input Bar -->
+        <div class="flex items-center gap-4 bg-dark-2 rounded-2xl p-2.5 pl-6 border border-white/5 shadow-2xl focus-within:border-primary/30 transition-all">
+            <button class="material-symbols-outlined text-on-surface-variant/40 hover:text-primary transition-colors">mic</button>
+            <input class="flex-1 bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface-variant/20 py-4 text-sm font-medium" placeholder="Share your insights with the room..." type="text" id="user-input"/>
+            <button class="w-12 h-12 rounded-xl bg-primary text-dark flex items-center justify-center shadow-lg hover:brightness-110 active:scale-95 transition-all" id="send-btn">
+                <span class="material-symbols-outlined font-black">arrow_forward</span>
+            </button>
+        </div>
+    </div>
+</div>
+</main>
+</div>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-8 pb-6 pt-4 bg-[#fff8f3]/60 backdrop-blur-2xl shadow-[0_-10px_40px_rgba(35,26,10,0.04)]">
+<div class="flex flex-col items-center justify-center bg-primary-container text-primary rounded-full p-3 scale-110">
+<span class="material-symbols-outlined" data-icon="chat_bubble">chat_bubble</span>
+</div>
+<div class="flex flex-col items-center justify-center text-primary/40">
+<span class="material-symbols-outlined" data-icon="local_library">local_library</span>
+</div>
+<div class="flex flex-col items-center justify-center text-primary/40">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+</div>
+</nav>
+</body><script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+  import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, collection, query, where, orderBy, getDocs, addDoc, serverTimestamp, onSnapshot, limit, setDoc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+  import { initAuthGuard, handleSignOut } from "./js/auth-guard.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBrep0S6P0oAzMQ-bE8h7GHTi5wn_QNrVg",
+    authDomain: "stemvi-afbac.firebaseapp.com",
+    projectId: "stemvi-afbac",
+    storageBucket: "stemvi-afbac.firebasestorage.app",
+    messagingSenderId: "548343962225",
+    appId: "1:548343962225:web:5e5624839645924b1e19d0"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let currentUser = null;
+  let currentRoomId = null;
+
+  initAuthGuard(auth);
+
+  const logoutBtns = ['sign-out-btn', 'sidebar-logout-btn'];
+  logoutBtns.forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.addEventListener('click', () => handleSignOut(auth));
+  });
+
+  window.initPage = async (user) => {
+    currentUser = user;
+    const urlParams = new URLSearchParams(window.location.search);
+    let roomId = urlParams.get('room');
+    
+    loadRooms(); // Load sidebar rooms
+
+    const userSnap = await getDoc(doc(db, "users", user.uid));
+    const userData = userSnap.exists() ? userSnap.data() : {};
+    
+    document.getElementById('user-name-display').textContent = userData.name || 'Scientist';
+    document.getElementById('user-email-display').textContent = user.email || 'authenticated user';
+    document.getElementById('user-avatar-initial').textContent = (userData.name || 'S').charAt(0).toUpperCase();
+
+    if (roomId) {
+      joinRoom(roomId);
+    } else {
+      const lastRoom = userData.lastActiveRoom;
+      if (lastRoom) {
+        window.location.href = `Room_Bot_chat.html?room=${lastRoom}`;
+      } else {
+        const newCode = `${Math.floor(100 + Math.random() * 900)}-${Math.floor(100 + Math.random() * 900)}`;
+        await setDoc(doc(db, "rooms", newCode), {
+          createdBy: user.uid,
+          createdAt: serverTimestamp(),
+          activeUsers: [user.uid],
+          topic: "Study Session"
+        });
+        await updateDoc(doc(db, "users", user.uid), { lastActiveRoom: newCode });
+        window.location.href = `Room_Bot_chat.html?room=${newCode}`;
+      }
+    }
+  };
+
+  async function loadRooms() {
+    const q = query(collection(db, "rooms"), orderBy("createdAt", "desc"), limit(10));
+    onSnapshot(q, (snapshot) => {
+      const container = document.getElementById('rooms-container');
+      if (!container) return;
+      container.innerHTML = '';
+      snapshot.forEach(doc => {
+        const room = doc.data();
+        const id = doc.id;
+        const isActive = id === currentRoomId;
+        const html = `
+          <div class="glass-panel p-4 rounded-xl cursor-pointer hover:bg-white/5 transition-all group ${isActive ? 'border-primary/50 bg-primary/5' : ''}" onclick="window.location.href='Room_Bot_chat.html?room=${id}'">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-dark transition-all">
+                <span class="material-symbols-outlined text-sm">hub</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="font-black text-[10px] text-on-surface uppercase tracking-widest truncate">${room.topic || 'General Session'}</p>
+                <p class="text-[8px] text-on-surface-variant font-black uppercase tracking-tighter mt-0.5">#${id}</p>
+              </div>
+            </div>
+          </div>
+        `;
+        container.insertAdjacentHTML('beforeend', html);
+      });
+    });
+  }
+
+  window.createRoom = async () => {
+    const topic = prompt("Enter Study Topic:", "Physics Revision");
+    if (!topic) return;
+    const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    await setDoc(doc(db, "rooms", roomId), {
+      createdBy: currentUser.uid,
+      createdAt: serverTimestamp(),
+      activeUsers: [currentUser.uid],
+      topic: topic
+    });
+    window.location.href = `Room_Bot_chat.html?room=${roomId}`;
+  };
+
+  async function joinRoom(roomId) {
+    currentRoomId = roomId;
+    document.getElementById('room-id-text').textContent = `#${roomId}`;
+    
+    await updateDoc(doc(db, "rooms", roomId), {
+      activeUsers: arrayUnion(currentUser.uid)
+    });
+    
+    await updateDoc(doc(db, "users", currentUser.uid), {
+      lastActiveRoom: roomId
+    });
+
+    const q = query(collection(db, `rooms/${roomId}/messages`), orderBy("timestamp", "asc"));
+    onSnapshot(q, (snapshot) => {
+      const chatContainer = document.getElementById('chat-container');
+      if (chatContainer.querySelector('.opacity-40')) chatContainer.innerHTML = '';
+      
+      // Handle initial load vs real-time additions
+      if (snapshot.docChanges().length > snapshot.docs.length / 2) {
+        chatContainer.innerHTML = '';
+        snapshot.forEach(doc => appendMessageUI(doc.data()));
+      } else {
+        snapshot.docChanges().forEach(change => {
+          if (change.type === "added") appendMessageUI(change.doc.data());
+        });
+      }
+      chatContainer.scrollTo(0, chatContainer.scrollHeight);
+    });
+  }
+
+  function appendMessageUI(msg) {
+    const container = document.getElementById('chat-container');
+    const isUser = msg.senderId === currentUser.uid;
+    const isAi = msg.senderId === 'system-ai';
+    
+    // Clear initial state if first message
+    if (container.querySelector('.opacity-40')) container.innerHTML = '';
+
+    let html = '';
+    if (isAi) {
+      html = `
+        <div class="flex items-start gap-5 max-w-2xl message-in">
+          <div class="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0 border border-primary/20">
+            <span class="material-symbols-outlined text-primary text-xl" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+          </div>
+          <div class="bot-bubble-glass p-6 rounded-2xl rounded-tl-none relative">
+            <p class="text-sm leading-relaxed text-on-surface font-medium">${msg.content}</p>
+            <div class="absolute -left-2 top-0 w-4 h-4 bg-transparent border-t-[12px] border-t-primary/10 border-r-[12px] border-r-transparent"></div>
+          </div>
+        </div>
+      `;
+    } else {
+      html = `
+        <div class="flex ${isUser ? 'justify-end' : 'justify-start'} message-in">
+          <div class="max-w-[85%] flex flex-col ${isUser ? 'items-end' : 'items-start'}">
+            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-2 opacity-60">${isUser ? 'You' : (msg.senderName || 'Scientist')}</p>
+            <div class="${isUser ? 'bg-primary text-dark rounded-2xl rounded-tr-none' : 'bg-white/5 text-on-surface rounded-2xl rounded-tl-none border border-white/5'} px-6 py-4 shadow-xl">
+              <p class="text-sm font-medium leading-relaxed">${msg.content}</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    container.insertAdjacentHTML('beforeend', html);
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('user-input');
+    const content = input.value.trim();
+    if (!content || !currentRoomId) return;
+
+    await addDoc(collection(db, `rooms/${currentRoomId}/messages`), {
+      senderId: currentUser.uid,
+      senderName: currentUser.displayName || 'Scientist',
+      content,
+      timestamp: serverTimestamp()
+    });
+
+    if (content.toLowerCase().includes('@bot')) {
+      handleBotResponse(content);
+    }
+
+    input.value = '';
+  }
+
+  async function handleBotResponse(text) {
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "anthropic/claude-3.5-sonnet",
+          messages: [
+            { role: "system", content: "You are StemVI Room-Bot. Participating in a group study session. Answer questions in Hinglish concisely." },
+            { role: "user", content: text }
+          ]
+        })
+      });
+
+      const data = await response.json();
+      const botText = data.choices[0].message.content;
+
+      await addDoc(collection(db, `rooms/${currentRoomId}/messages`), {
+        senderId: 'system-ai',
+        senderName: 'Room-Bot',
+        content: botText,
+        timestamp: serverTimestamp()
+      });
+    } catch (err) {
+      console.error("AI Error:", err);
+    }
+  }
+
+  document.getElementById('send-btn').onclick = sendMessage;
+  document.getElementById('user-input').onkeypress = (e) => { if(e.key === 'Enter') sendMessage(); };
+
+</script>
+</body></html>

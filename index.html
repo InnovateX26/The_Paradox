@@ -1,0 +1,4175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StemVI — Padho Smarter. Socho Deeper.</title>
+  <meta name="description"
+    content="AI-powered learning for every Indian student. Hinglish explanations, local analogies, and smart exam prep." />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;0,800;1,700&family=Playfair+Display:ital,wght@1,700;1,900&family=Caveat:wght@600;700&display=swap');
+
+    :root {
+      --cream: #FBE8CE;
+      --cream-dim: rgba(251, 232, 206, 0.7);
+      --sage-light: #C3CC9B;
+      --sage-pale: #E4DFB5;
+      --sage: #9AB17A;
+      --dark: #1e2511;
+      --dark-2: #232b14;
+      --dark-3: #191f0e;
+      --dark-4: #0f1509;
+
+      --font-primary: 'Plus Jakarta Sans', sans-serif;
+      --font-headline: 'Playfair Display', serif;
+      --font-handwriting: 'Caveat', cursive;
+
+      --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.5);
+      --glass: rgba(35, 43, 20, 0.6);
+      --glass-border: 1px solid rgba(195, 204, 155, 0.1);
+    }
+
+    /* Base resets merged from theme */
+    * {
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .auth-body {
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
+    }
+
+    .left-panel {
+      flex: 1.1;
+      background: var(--dark);
+      position: relative;
+      padding: 4rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .right-panel {
+      flex: 0.9;
+      background: var(--dark-2);
+      color: var(--cream);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 4rem;
+      position: relative;
+    }
+  </style>
+  <script src="js/theme.js" defer></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;0,800;1,700&family=Playfair+Display:ital,wght@1,700;1,900&family=Caveat:wght@600;700&display=swap"
+    rel="stylesheet">
+
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --cream: #FBE8CE;
+      --sage-light: #C3CC9B;
+      --sage-pale: #E4DFB5;
+      --sage: #9AB17A;
+      --dark: #1e2511;
+      --dark-2: #232b14;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* ── Scroll motion blur ──
+       Applied only to .scroll-blur-wrap, a single wrapper
+       so it never creates stacking contexts on grid/absolute children ── */
+    .scroll-blur-wrap {
+      transition: filter 0.16s ease-out;
+      will-change: filter;
+    }
+
+    body.is-scrolling .scroll-blur-wrap {
+      filter: blur(0.6px);
+      transition: filter 0.06s linear;
+    }
+
+    /* ── Section reveal on scroll ───────── */
+    .reveal-section {
+      opacity: 0;
+      transform: translateY(36px);
+      transition: opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .reveal-section.in-view {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Gradient bridges between sections ── */
+    .bridge {
+      display: block;
+      width: 100%;
+      height: 120px;
+      pointer-events: none;
+    }
+
+    .bridge-dark-to-cream {
+      background: linear-gradient(to bottom, #191f0e 0%, #FBE8CE 100%);
+    }
+
+    .bridge-cream-to-dark {
+      background: linear-gradient(to bottom, #FBE8CE 0%, #1e2511 100%);
+    }
+
+    .bridge-hero-to-bento {
+      background: linear-gradient(to bottom, #1e2511 0%, #191f0e 100%);
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--dark);
+      color: #fff;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 48px;
+      background: rgba(30, 37, 17, 0.55);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-bottom: 1px solid rgba(154, 177, 122, 0.08);
+      transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: transform;
+    }
+
+    nav.nav-hidden {
+      transform: translateY(-100%);
+    }
+
+    .nav-logo {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--sage);
+      letter-spacing: -0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 36px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: rgba(255, 255, 255, 0.55);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      transition: color 0.2s;
+      letter-spacing: 0.01em;
+    }
+
+    .nav-links a:hover {
+      color: var(--sage);
+    }
+
+    .nav-cta {
+      background: var(--sage);
+      color: var(--dark);
+      padding: 10px 24px;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+
+    .nav-cta:hover {
+      opacity: 0.88;
+      transform: scale(1.03);
+    }
+
+    /* ─── HERO WRAPPER ─── */
+    .hero {
+      position: relative;
+      width: 100%;
+      min-height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--dark);
+    }
+
+    /* ─── BACKGROUND: GLOW ─── */
+    .bg-glow {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse 70% 55% at 50% 58%,
+          rgba(154, 177, 122, 0.20) 0%,
+          rgba(154, 177, 122, 0.07) 45%,
+          transparent 75%);
+      animation: glow-pulse 5s ease-in-out infinite;
+      will-change: opacity;
+    }
+
+    @keyframes glow-pulse {
+
+      0%,
+      100% {
+        opacity: 0.72;
+      }
+
+      50% {
+        opacity: 1;
+      }
+    }
+
+    /* ─── BACKGROUND: STARS ─── */
+    #particles {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ─── BACKGROUND: GRID ─── */
+    .bg-grid {
+      position: absolute;
+      bottom: -40px;
+      left: 50%;
+      transform: translateX(-50%) perspective(700px) rotateX(72deg);
+      width: 220%;
+      height: 65%;
+      z-index: 0;
+      background-image:
+        linear-gradient(to right, rgba(154, 177, 122, 0.5) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(154, 177, 122, 0.5) 1px, transparent 1px);
+      background-size: 70px 70px;
+      mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, transparent 70%);
+      -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, transparent 70%);
+      opacity: 0.07;
+    }
+
+    /* ─── FLOATERS LAYER ─── */
+    .floaters {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* ─── CLAY BASE ─── */
+    .clay {
+      position: absolute;
+      border-radius: 20px;
+    }
+
+    /* ─── FLOAT KEYFRAMES — each card unique speed + delay ─── */
+    @keyframes fa {
+
+      0%,
+      100% {
+        transform: translateY(0) rotate(8deg)
+      }
+
+      50% {
+        transform: translateY(-24px) rotate(8deg)
+      }
+    }
+
+    @keyframes fb {
+
+      0%,
+      100% {
+        transform: translateY(0) rotate(-14deg)
+      }
+
+      50% {
+        transform: translateY(-19px) rotate(-14deg)
+      }
+    }
+
+    @keyframes fc {
+
+      0%,
+      100% {
+        transform: translateY(0) rotate(6deg)
+      }
+
+      50% {
+        transform: translateY(-13px) rotate(6deg)
+      }
+    }
+
+    @keyframes fd {
+
+      0%,
+      100% {
+        transform: translateY(0) rotate(-7deg)
+      }
+
+      50% {
+        transform: translateY(-21px) rotate(-7deg)
+      }
+    }
+
+    @keyframes fe {
+
+      0%,
+      100% {
+        transform: translateY(0)
+      }
+
+      50% {
+        transform: translateY(-16px)
+      }
+    }
+
+    @keyframes ff {
+
+      0%,
+      100% {
+        transform: translateY(0) rotate(-9deg)
+      }
+
+      50% {
+        transform: translateY(-11px) rotate(-9deg)
+      }
+    }
+
+    @keyframes fg {
+
+      0%,
+      100% {
+        transform: translateY(0) rotate(13deg)
+      }
+
+      50% {
+        transform: translateY(-17px) rotate(13deg)
+      }
+    }
+
+    @keyframes fh {
+
+      0%,
+      100% {
+        transform: translateY(0) rotate(-4deg)
+      }
+
+      50% {
+        transform: translateY(-9px) rotate(-4deg)
+      }
+    }
+
+    /* ══════════════════════════════
+       CARD 1 — AI Explanation  (FRONT, upper-center)
+       ══════════════════════════════ */
+    .c1 {
+      background: var(--cream);
+      color: var(--dark);
+      width: 295px;
+      top: 9%;
+      left: 50%;
+      margin-left: -147px;
+      padding: 22px 22px 18px;
+      animation: fa 6s ease-in-out infinite;
+      will-change: transform;
+      box-shadow:
+        0 0 70px 12px rgba(154, 177, 122, 0.38),
+        0 32px 64px -8px rgba(154, 177, 122, 0.25),
+        inset 0 2px 5px rgba(255, 255, 255, 0.85),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.04);
+      outline: 1.5px solid rgba(154, 177, 122, 0.55);
+      z-index: 6;
+    }
+
+    /* ══════════════════════════════
+       CARD 2 — Local Analogy  (BACK, upper-left)
+       ══════════════════════════════ */
+    .c2 {
+      background: rgba(195, 204, 155, 0.38);
+      border: 1px solid rgba(195, 204, 155, 0.22);
+      color: var(--dark);
+      width: 200px;
+      top: 13%;
+      left: 3%;
+      padding: 18px 16px;
+      animation: fb 4.5s ease-in-out infinite;
+      animation-delay: -1.8s;
+      will-change: transform;
+      box-shadow: 0 20px 40px rgba(154, 177, 122, 0.18);
+      opacity: 0.55;
+      z-index: 3;
+    }
+
+    /* ══════════════════════════════
+       CARD 3 — Listening Pill  (upper-right)
+       ══════════════════════════════ */
+    .c3 {
+      background: rgba(22, 30, 12, 0.92);
+      border: 1.5px solid var(--sage);
+      border-radius: 60px;
+      color: var(--sage);
+      width: 175px;
+      top: 17%;
+      right: 4%;
+      padding: 14px 20px;
+      animation: fc 3.5s ease-in-out infinite;
+      animation-delay: -0.7s;
+      will-change: transform;
+      box-shadow:
+        0 0 35px rgba(154, 177, 122, 0.28),
+        0 12px 30px rgba(154, 177, 122, 0.15);
+      z-index: 4;
+    }
+
+    /* ══════════════════════════════
+       CARD 4 — Flashcard Q&A  (FRONT, bottom-left)
+       ══════════════════════════════ */
+    .c4 {
+      background: var(--cream);
+      color: var(--dark);
+      width: 255px;
+      bottom: 13%;
+      left: 3%;
+      padding: 20px 20px 16px;
+      animation: fd 5s ease-in-out infinite;
+      animation-delay: -2.3s;
+      will-change: transform;
+      box-shadow:
+        0 0 55px 8px rgba(154, 177, 122, 0.32),
+        0 24px 50px rgba(154, 177, 122, 0.18),
+        inset 0 2px 5px rgba(255, 255, 255, 0.85);
+      outline: 1.5px solid rgba(154, 177, 122, 0.5);
+      z-index: 6;
+    }
+
+    /* ══════════════════════════════
+       CARD 5 — Progress Ring  (bottom-right)
+       ══════════════════════════════ */
+    .c5 {
+      background: rgba(22, 30, 12, 0.88);
+      border: 1px solid rgba(154, 177, 122, 0.22);
+      border-radius: 50%;
+      width: 115px;
+      height: 115px;
+      bottom: 11%;
+      right: 5%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      animation: fe 4s ease-in-out infinite;
+      animation-delay: -1.1s;
+      will-change: transform;
+      box-shadow:
+        0 0 45px rgba(154, 177, 122, 0.28),
+        0 16px 32px rgba(154, 177, 122, 0.12);
+      z-index: 4;
+    }
+
+    .progress-svg circle.ring-track {
+      stroke: rgba(154, 177, 122, 0.15);
+    }
+
+    .progress-svg circle.ring-fill {
+      stroke: var(--sage);
+      stroke-dasharray: 220;
+      stroke-dashoffset: 220;
+      animation: ring-draw 2.2s 0.5s ease-out forwards;
+      transform: rotate(-90deg);
+      transform-origin: 45px 45px;
+    }
+
+    @keyframes ring-draw {
+      to {
+        stroke-dashoffset: 48;
+      }
+    }
+
+    /* ── Tiny badges ──────────────────── */
+    .t-room {
+      position: absolute;
+      background: rgba(22, 30, 12, 0.92);
+      border: 1px solid rgba(154, 177, 122, 0.28);
+      border-radius: 40px;
+      padding: 8px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--sage-pale);
+      top: 42%;
+      left: 7%;
+      animation: ff 3.8s ease-in-out infinite;
+      animation-delay: -0.5s;
+      will-change: transform;
+      box-shadow: 0 8px 20px rgba(154, 177, 122, 0.14);
+      z-index: 3;
+    }
+
+    .t-mic {
+      position: absolute;
+      background: rgba(195, 204, 155, 0.28);
+      border: 1px solid rgba(154, 177, 122, 0.18);
+      border-radius: 50%;
+      width: 46px;
+      height: 46px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      top: 56%;
+      right: 11%;
+      animation: fg 2.8s ease-in-out infinite;
+      animation-delay: -1.3s;
+      will-change: transform;
+      box-shadow: 0 8px 22px rgba(154, 177, 122, 0.18);
+      z-index: 3;
+    }
+
+    .t-scan {
+      position: absolute;
+      background: rgba(228, 223, 181, 0.16);
+      border: 1px solid rgba(154, 177, 122, 0.14);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      top: 70%;
+      left: 16%;
+      animation: fh 3.2s ease-in-out infinite;
+      animation-delay: -0.4s;
+      will-change: transform;
+      z-index: 3;
+    }
+
+    /* ── Sound Wave bars ─── */
+    .wave {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      height: 22px;
+      margin-top: 9px;
+    }
+
+    .bar {
+      width: 3px;
+      background: var(--sage);
+      border-radius: 3px;
+      animation: sound 0.8s ease-in-out infinite;
+    }
+
+    @keyframes sound {
+
+      0%,
+      100% {
+        height: 3px;
+      }
+
+      50% {
+        height: 17px;
+      }
+    }
+
+    /* ── Card Typography helpers ─── */
+    .card-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      margin-bottom: 7px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 7px;
+    }
+
+    .card-body {
+      font-size: 11.5px;
+      line-height: 1.65;
+    }
+
+    .tag {
+      display: inline-block;
+      background: rgba(154, 177, 122, 0.18);
+      color: #5a6f30;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-right: 5px;
+      margin-top: 9px;
+    }
+
+    /* ─── HERO CONTENT (text + CTA) ─── */
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 32px 24px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .h1-main {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: clamp(68px, 8.5vw, 108px);
+      font-weight: 800;
+      letter-spacing: -4px;
+      line-height: 1.0;
+      color: #ffffff;
+      text-shadow: 0 4px 40px rgba(154, 177, 122, 0.15);
+    }
+
+    .h1-italic {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(68px, 8.5vw, 108px);
+      font-style: italic;
+      font-weight: 700;
+      letter-spacing: -3px;
+      line-height: 1.05;
+      color: var(--sage);
+      text-shadow: 0 0 60px rgba(154, 177, 122, 0.4);
+    }
+
+    .subtitle {
+      color: rgba(255, 255, 255, 0.38);
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      margin-top: 22px;
+      max-width: 420px;
+    }
+
+    .cta-group {
+      display: flex;
+      gap: 16px;
+      margin-top: 38px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn-scan {
+      background: var(--cream);
+      color: var(--dark);
+      padding: 17px 36px;
+      border-radius: 60px;
+      font-size: 15px;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: 0 10px 40px rgba(251, 232, 206, 0.22), 0 2px 8px rgba(0, 0, 0, 0.15);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      letter-spacing: -0.3px;
+    }
+
+    .btn-scan:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 18px 50px rgba(251, 232, 206, 0.32), 0 4px 12px rgba(0, 0, 0, 0.18);
+    }
+
+    .btn-doubt {
+      background: transparent;
+      color: var(--sage);
+      padding: 17px 36px;
+      border-radius: 60px;
+      font-size: 15px;
+      font-weight: 700;
+      border: 2px solid var(--sage);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s ease;
+      letter-spacing: -0.3px;
+    }
+
+    .btn-doubt:hover {
+      background: rgba(154, 177, 122, 0.12);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 35px rgba(154, 177, 122, 0.18);
+    }
+
+    /* ─── SCROLL INDICATOR ─── */
+    .scroll-hint {
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      opacity: 0.35;
+      animation: scroll-bob 2s ease-in-out infinite;
+    }
+
+    @keyframes scroll-bob {
+
+      0%,
+      100% {
+        transform: translateX(-50%) translateY(0);
+      }
+
+      50% {
+        transform: translateX(-50%) translateY(6px);
+      }
+    }
+
+    .scroll-hint span {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--sage-pale);
+    }
+
+    /* ─── SECTIONS BELOW HERO (placeholder) ─── */
+    .section-features {
+      padding: 100px 64px;
+      background: #1a2110;
+    }
+
+    .section-title {
+      font-size: 40px;
+      font-weight: 800;
+      color: var(--sage-pale);
+      text-align: center;
+      letter-spacing: -1px;
+      margin-bottom: 14px;
+    }
+
+    .section-sub {
+      text-align: center;
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 15px;
+      max-width: 500px;
+      margin: 0 auto 64px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .feat-card {
+      background: rgba(195, 204, 155, 0.1);
+      border: 1px solid rgba(154, 177, 122, 0.15);
+      border-radius: 24px;
+      padding: 32px 28px;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .feat-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 50px rgba(154, 177, 122, 0.12);
+    }
+
+    .feat-icon {
+      font-size: 30px;
+      margin-bottom: 16px;
+    }
+
+    .feat-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--sage-pale);
+      margin-bottom: 8px;
+    }
+
+    .feat-desc {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.45);
+      line-height: 1.7;
+    }
+
+    /* SVG icons inline */
+    svg {
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    /* ═══════════════════════════════════════
+       HOW IT WORKS
+    ═══════════════════════════════════════ */
+    .hiw-section {
+      background: #191f0e;
+      padding: 100px 56px 120px;
+    }
+
+    .hiw-header {
+      max-width: 1100px;
+      margin: 0 auto 64px;
+    }
+
+    .hiw-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--sage);
+      margin-bottom: 14px;
+    }
+
+    .hiw-title {
+      font-size: clamp(34px, 4vw, 52px);
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      line-height: 1.1;
+      color: var(--sage-pale);
+    }
+
+    .hiw-steps {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .hiw-card {
+      flex: 1;
+      position: relative;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(154, 177, 122, 0.15);
+      border-radius: 28px;
+      padding: 44px 36px 40px;
+      overflow: hidden;
+      box-shadow:
+        0 2px 0 rgba(255, 255, 255, 0.05) inset,
+        0 20px 50px rgba(0, 0, 0, 0.25);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .hiw-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 2px 0 rgba(255, 255, 255, 0.06) inset, 0 0 0 1px rgba(154, 177, 122, 0.25), 0 28px 64px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Giant watermark number */
+    .hiw-watermark {
+      position: absolute;
+      top: -24px;
+      right: -10px;
+      font-size: 180px;
+      font-weight: 900;
+      letter-spacing: -8px;
+      line-height: 1;
+      color: rgba(154, 177, 122, 0.09);
+      pointer-events: none;
+      user-select: none;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .hiw-icon {
+      width: 52px;
+      height: 52px;
+      background: rgba(154, 177, 122, 0.12);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .hiw-step-label {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(154, 177, 122, 0.5);
+      margin-bottom: 12px;
+    }
+
+    .hiw-card-title {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--sage-pale);
+      margin-bottom: 14px;
+      line-height: 1.2;
+    }
+
+    .hiw-card-body {
+      font-size: 14px;
+      line-height: 1.75;
+      color: rgba(228, 223, 181, 0.5);
+      font-weight: 500;
+    }
+
+    /* Connector arrows between steps */
+    .hiw-arrow {
+      flex-shrink: 0;
+      width: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ═══════════════════════════════════════
+       BENTO SECTION
+    ═══════════════════════════════════════ */
+    .bento-section {
+      padding: 100px 56px 120px;
+      background: #191f0e;
+    }
+
+    .bento-header {
+      max-width: 1100px;
+      margin: 0 auto 52px;
+    }
+
+    .bento-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--sage);
+      margin-bottom: 14px;
+    }
+
+    .bento-title {
+      font-size: clamp(34px, 4vw, 50px);
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      line-height: 1.1;
+      color: var(--sage-pale);
+    }
+
+    /* Grid: 3-col base */
+    .bento-grid {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      grid-template-rows: auto auto auto;
+      gap: 16px;
+    }
+
+    /* Base bento card */
+    .bc {
+      border-radius: 28px;
+      padding: 32px;
+      box-shadow:
+        0 2px 0 rgba(255, 255, 255, 0.06) inset,
+        0 20px 50px rgba(0, 0, 0, 0.25);
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ── Card A: OCR Scanner — spans col 1, row 1 ── */
+    .bc-a {
+      grid-column: 1;
+      grid-row: 1;
+      background: var(--cream);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 28px;
+      min-height: 300px;
+    }
+
+    .bc-top {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .bc-headline {
+      font-size: clamp(30px, 3.2vw, 42px);
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      color: var(--dark);
+      line-height: 1.05;
+    }
+
+    .bc-foot-tag {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(30, 37, 17, 0.45);
+      letter-spacing: 0.05em;
+    }
+
+    /* scan mock visual */
+    .bc-scan-mock {
+      position: absolute;
+      top: 28px;
+      right: 28px;
+      width: 200px;
+      height: 170px;
+      background: rgba(30, 37, 17, 0.04);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .scan-lines {
+      padding: 18px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .scan-line {
+      height: 9px;
+      border-radius: 5px;
+      background: rgba(30, 37, 17, 0.12);
+    }
+
+    .sl-1 {
+      width: 88%;
+    }
+
+    .sl-2 {
+      width: 72%;
+    }
+
+    .sl-3 {
+      width: 95%;
+    }
+
+    .sl-4 {
+      width: 60%;
+    }
+
+    .sl-5 {
+      width: 82%;
+    }
+
+    .sl-6 {
+      width: 50%;
+    }
+
+    .scan-beam {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--sage), var(--sage), transparent);
+      box-shadow: 0 0 10px 3px rgba(154, 177, 122, 0.5);
+      animation: beam-sweep 2.5s ease-in-out infinite;
+    }
+
+    @keyframes beam-sweep {
+      0% {
+        top: 0%;
+        opacity: 0;
+      }
+
+      10% {
+        opacity: 1;
+      }
+
+      90% {
+        opacity: 1;
+      }
+
+      100% {
+        top: 100%;
+        opacity: 0;
+      }
+    }
+
+    .scan-corner {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-color: var(--sage);
+      border-style: solid;
+    }
+
+    .scan-corner.tl {
+      top: 6px;
+      left: 6px;
+      border-width: 2px 0 0 2px;
+      border-radius: 3px 0 0 0;
+    }
+
+    .scan-corner.tr {
+      top: 6px;
+      right: 6px;
+      border-width: 2px 2px 0 0;
+      border-radius: 0 3px 0 0;
+    }
+
+    .scan-corner.bl {
+      bottom: 6px;
+      left: 6px;
+      border-width: 0 0 2px 2px;
+      border-radius: 0 0 0 3px;
+    }
+
+    .scan-corner.br {
+      bottom: 6px;
+      right: 6px;
+      border-width: 0 2px 2px 0;
+      border-radius: 0 0 3px 0;
+    }
+
+    /* ── Card B: Hinglish — col 2, row 1 ── */
+    .bc-b {
+      grid-column: 2;
+      grid-row: 1;
+      background: var(--dark);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .bc-hinglish-text {
+      font-size: clamp(17px, 1.8vw, 22px);
+      font-weight: 700;
+      line-height: 1.6;
+      color: var(--cream);
+      flex: 1;
+      display: block;
+      padding: 8px 0;
+    }
+
+    .bc-hinglish-text em {
+      color: var(--sage);
+      font-style: italic;
+    }
+
+    .bc-hinglish-foot {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(228, 223, 181, 0.35);
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Card C: Exam Prep — col 1, row 2 ── */
+    .bc-c {
+      grid-column: 1;
+      grid-row: 2;
+      background: var(--sage-light);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .bc-q-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .bc-q-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--dark);
+      background: rgba(30, 37, 17, 0.08);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+
+    .bc-q-num {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--dark);
+      background: rgba(30, 37, 17, 0.14);
+      border-radius: 6px;
+      padding: 2px 7px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .bc-q-foot {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(30, 37, 17, 0.45);
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Card D: Group Study — col 2, row 2 ── */
+    .bc-d {
+      grid-column: 2;
+      grid-row: 2;
+      background: var(--dark);
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .bc-d-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .bc-room-code {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: clamp(20px, 2.5vw, 30px);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      color: var(--cream);
+      line-height: 1.1;
+    }
+
+    .bc-d-right {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .bc-avatars {
+      display: flex;
+      gap: 8px;
+    }
+
+    .bc-av {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .bc-live {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .bc-pulse {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4ade80;
+      box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.8);
+      animation: pulse-ring 2s ease-out infinite;
+    }
+
+    @keyframes pulse-ring {
+      0% {
+        box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.6);
+      }
+
+      70% {
+        box-shadow: 0 0 0 8px rgba(74, 222, 128, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+      }
+    }
+
+    .bc-live-text {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--sage);
+    }
+
+    /* ── ROW 3: Strip — full width ── */
+    .bc-strip {
+      grid-column: 1 / -1;
+      grid-row: 3;
+      background: var(--sage-pale);
+      display: flex;
+      align-items: stretch;
+      padding: 0;
+      gap: 0;
+    }
+
+    .bc-strip-cell {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 32px 36px;
+    }
+
+    .bc-strip-divider {
+      width: 1px;
+      background: rgba(30, 37, 17, 0.12);
+      flex-shrink: 0;
+      margin: 24px 0;
+    }
+
+    .bc-strip-icon {
+      width: 38px;
+      height: 38px;
+      background: rgba(30, 37, 17, 0.1);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 2px;
+    }
+
+    .bc-strip-name {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--dark);
+      letter-spacing: -0.3px;
+    }
+
+    .bc-strip-desc {
+      font-size: 13px;
+      line-height: 1.65;
+      color: rgba(30, 37, 17, 0.6);
+      font-weight: 500;
+    }
+
+    /* ── badge shared ── */
+    .bc-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: rgba(30, 37, 17, 0.1);
+      color: rgba(30, 37, 17, 0.55);
+      margin-bottom: 4px;
+    }
+
+    .bc-badge-sage {
+      background: rgba(154, 177, 122, 0.18);
+      color: var(--sage);
+    }
+
+    .bc-badge-dark {
+      background: rgba(30, 37, 17, 0.15);
+      color: rgba(30, 37, 17, 0.6);
+    }
+
+    /* ════════════════════════════════════════
+       DEMO SECTION — Watch StemVI Think
+    ════════════════════════════════════════ */
+    .demo-section {
+      background: #191f0e;
+      padding: 100px 56px 120px;
+    }
+
+    .demo-header {
+      text-align: center;
+      max-width: 700px;
+      margin: 0 auto 64px;
+    }
+
+    .demo-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--sage);
+      margin-bottom: 16px;
+    }
+
+    .demo-title {
+      font-size: clamp(36px, 4.5vw, 58px);
+      font-weight: 800;
+      letter-spacing: -2px;
+      color: var(--sage-pale);
+      line-height: 1.05;
+      margin-bottom: 14px;
+    }
+
+    .demo-sub {
+      font-size: 15px;
+      color: rgba(228, 223, 181, 0.45);
+      font-weight: 500;
+      line-height: 1.6;
+    }
+
+    /* Outer claymorphism card */
+    .demo-card {
+      max-width: 1100px;
+      margin: 0 auto;
+      border-radius: 32px;
+      background: var(--dark);
+      box-shadow:
+        0 3px 0 rgba(255, 255, 255, 0.12) inset,
+        0 40px 100px rgba(30, 37, 17, 0.22),
+        0 0 0 1px rgba(154, 177, 122, 0.2);
+      display: flex;
+      overflow: hidden;
+      position: relative;
+      min-height: 520px;
+    }
+
+
+
+    /* Left panel */
+    .demo-left {
+      flex: 1;
+      background: var(--dark);
+      padding: 36px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .demo-panel-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .demo-panel-label-scan {
+      color: var(--sage);
+    }
+
+    .demo-panel-label-ai {
+      color: var(--sage);
+    }
+
+    /* Lined paper note */
+    .demo-note {
+      flex: 1;
+      background: #fefce8;
+      border-radius: 16px;
+      padding: 20px 22px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25), inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+    }
+
+    .demo-note::before {
+      /* lined paper lines */
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: repeating-linear-gradient(to bottom,
+          transparent 0px,
+          transparent 31px,
+          rgba(173, 216, 230, 0.45) 32px);
+      background-size: 100% 32px;
+      pointer-events: none;
+    }
+
+    .demo-note-text {
+      font-family: 'Caveat', cursive;
+      font-size: 20px;
+      font-weight: 600;
+      color: #1a3a8f;
+      line-height: 32px;
+      padding-top: 6px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Scanning loading bar */
+    .demo-scan-btn {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .demo-scan-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--sage);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .demo-scan-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--sage);
+      animation: pulse-ring 1.5s ease-out infinite;
+    }
+
+    .demo-bar-track {
+      height: 5px;
+      border-radius: 4px;
+      background: rgba(154, 177, 122, 0.18);
+      overflow: hidden;
+    }
+
+    .demo-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, var(--sage-light), var(--sage));
+      animation: bar-scan 2.8s ease-in-out infinite;
+      transform-origin: left;
+    }
+
+    @keyframes bar-scan {
+      0% {
+        width: 0%;
+        opacity: 1;
+      }
+
+      65% {
+        width: 100%;
+        opacity: 1;
+      }
+
+      80% {
+        width: 100%;
+        opacity: 0.4;
+      }
+
+      100% {
+        width: 0%;
+        opacity: 0;
+      }
+    }
+
+    /* Right panel */
+    .demo-right {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 36px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .demo-topic-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(154, 177, 122, 0.12);
+      color: var(--sage-pale);
+      border-radius: 30px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 800;
+      width: fit-content;
+    }
+
+    .demo-explanation {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--cream);
+      line-height: 1.75;
+      flex: 1;
+    }
+
+    .demo-analogy-pill {
+      background: rgba(154, 177, 122, 0.15);
+      border: 1px solid rgba(154, 177, 122, 0.3);
+      border-radius: 16px;
+      padding: 16px 18px;
+    }
+
+    .demo-analogy-title {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--sage);
+      margin-bottom: 8px;
+    }
+
+    .demo-analogy-text {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(228, 223, 181, 0.55);
+      line-height: 1.65;
+    }
+
+    .demo-action-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .demo-action-btn {
+      flex: 1;
+      background: rgba(154, 177, 122, 0.1);
+      border: 1px solid rgba(154, 177, 122, 0.18);
+      border-radius: 30px;
+      padding: 10px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--sage-pale);
+      cursor: pointer;
+      font-family: inherit;
+      text-align: center;
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    .demo-action-btn:hover {
+      background: rgba(30, 37, 17, 0.13);
+      transform: translateY(-2px);
+    }
+
+    /* ══════════════════════════════════════
+       SPOTLIGHT — Group Study Sync
+    ══════════════════════════════════════ */
+    .spot-section {
+      background: #191f0e;
+      padding: 100px 56px 120px;
+    }
+
+    .spot-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+    }
+
+    /* LEFT: text */
+    .spot-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--sage);
+      margin-bottom: 20px;
+    }
+
+    .spot-headline {
+      font-size: clamp(32px, 3.8vw, 50px);
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      line-height: 1.1;
+      color: var(--sage-pale);
+      margin-bottom: 22px;
+    }
+
+    .spot-body {
+      font-size: 15px;
+      font-weight: 500;
+      color: rgba(228, 223, 181, 0.5);
+      line-height: 1.8;
+      margin-bottom: 32px;
+    }
+
+    .spot-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 40px;
+    }
+
+    .spot-feat {
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(228, 223, 181, 0.6);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .spot-feat-arrow {
+      color: var(--sage);
+      font-weight: 800;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .spot-cta {
+      display: inline-block;
+      background: var(--cream);
+      color: var(--dark);
+      font-size: 15px;
+      font-weight: 800;
+      border: none;
+      border-radius: 60px;
+      padding: 15px 32px;
+      cursor: pointer;
+      font-family: inherit;
+      letter-spacing: -0.3px;
+      box-shadow: 0 8px 30px rgba(251, 232, 206, 0.15);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .spot-cta:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 40px rgba(251, 232, 206, 0.22);
+    }
+
+    /* RIGHT: Room card */
+    .spot-card {
+      background: var(--dark);
+      border-radius: 32px;
+      padding: 32px;
+      box-shadow:
+        0 3px 0 rgba(255, 255, 255, 0.07) inset,
+        0 32px 80px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(154, 177, 122, 0.18);
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .spot-card-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(154, 177, 122, 0.5);
+    }
+
+    .spot-room-code {
+      font-family: 'Courier New', monospace;
+      font-size: clamp(26px, 3vw, 38px);
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      color: var(--sage-pale);
+      text-align: center;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(154, 177, 122, 0.15);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .spot-avatars {
+      display: flex;
+      align-items: center;
+      gap: -6px;
+    }
+
+    .spot-av {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 800;
+      border: 2px solid var(--dark);
+      margin-left: -8px;
+    }
+
+    .spot-av:first-child {
+      margin-left: 0;
+    }
+
+    .spot-active {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(228, 223, 181, 0.5);
+      margin-top: 4px;
+    }
+
+    .spot-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4ade80;
+      box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
+      animation: pulse-ring 2s ease-out infinite;
+      flex-shrink: 0;
+    }
+
+    /* Chat bubbles */
+    .spot-chat {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .chat-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    .chat-row.right {
+      flex-direction: row-reverse;
+    }
+
+    .chat-name {
+      font-size: 10px;
+      font-weight: 800;
+      color: rgba(154, 177, 122, 0.5);
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
+      margin-top: 3px;
+      min-width: 40px;
+    }
+
+    .chat-bubble {
+      border-radius: 16px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.55;
+      max-width: 78%;
+    }
+
+    .bubble-user {
+      background: rgba(228, 223, 181, 0.1);
+      color: rgba(228, 223, 181, 0.75);
+      border-radius: 16px 16px 16px 4px;
+    }
+
+    .bubble-ai {
+      background: rgba(154, 177, 122, 0.15);
+      color: var(--sage-pale);
+      border: 1px solid rgba(154, 177, 122, 0.2);
+      border-radius: 16px 16px 4px 16px;
+    }
+
+    .bubble-reply {
+      background: rgba(255, 255, 255, 0.05);
+      color: rgba(228, 223, 181, 0.6);
+      border-radius: 16px 16px 16px 4px;
+    }
+
+    /* ══════════════════════════════════════
+       CTA BANNER
+    ══════════════════════════════════════ */
+    .cta-section {
+      background: var(--dark);
+      position: relative;
+      padding: 120px 56px 130px;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .cta-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 700px;
+      height: 500px;
+      background: radial-gradient(ellipse at center, rgba(154, 177, 122, 0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .cta-inner {
+      position: relative;
+      z-index: 2;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .cta-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(154, 177, 122, 0.1);
+      border: 1px solid rgba(154, 177, 122, 0.2);
+      border-radius: 40px;
+      padding: 7px 18px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--sage-pale);
+      margin-bottom: 36px;
+    }
+
+    .cta-badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #4ade80;
+      box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
+      animation: pulse-ring 2s ease-out infinite;
+    }
+
+    .cta-headline {
+      font-size: clamp(52px, 7vw, 90px);
+      font-weight: 800;
+      letter-spacing: -3px;
+      line-height: 1.0;
+      color: var(--cream);
+      margin-bottom: 28px;
+    }
+
+    .cta-headline em {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      color: var(--sage);
+    }
+
+    .cta-sub {
+      font-size: 16px;
+      font-weight: 500;
+      color: rgba(154, 177, 122, 0.65);
+      line-height: 1.75;
+      margin-bottom: 52px;
+    }
+
+    .cta-btns {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 64px;
+    }
+
+    .cta-btn-primary {
+      background: var(--cream);
+      color: var(--dark);
+      border: none;
+      border-radius: 60px;
+      padding: 18px 40px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      font-family: inherit;
+      letter-spacing: -0.3px;
+      box-shadow:
+        0 4px 0 rgba(255, 255, 255, 0.5) inset,
+        0 20px 60px rgba(251, 232, 206, 0.18),
+        0 8px 24px rgba(0, 0, 0, 0.25);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .cta-btn-primary:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 4px 0 rgba(255, 255, 255, 0.5) inset, 0 30px 70px rgba(251, 232, 206, 0.25), 0 12px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .cta-btn-secondary {
+      background: transparent;
+      color: var(--cream);
+      border: 2px solid rgba(154, 177, 122, 0.45);
+      border-radius: 60px;
+      padding: 18px 40px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .cta-btn-secondary:hover {
+      border-color: var(--sage);
+      background: rgba(154, 177, 122, 0.08);
+      transform: translateY(-3px);
+    }
+
+    .cta-colleges {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .cta-college-label {
+      width: 100%;
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(154, 177, 122, 0.4);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .cta-college-pill {
+      background: rgba(154, 177, 122, 0.08);
+      border: 1px solid rgba(154, 177, 122, 0.15);
+      border-radius: 30px;
+      padding: 7px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(228, 223, 181, 0.5);
+    }
+
+    /* ══════════════════════════════════════
+       FOOTER
+    ══════════════════════════════════════ */
+    .site-footer {
+      background: #0f1509;
+      padding: 80px 56px 0;
+    }
+
+    .footer-grid {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr 1fr;
+      gap: 48px;
+      padding-bottom: 64px;
+    }
+
+    .footer-brand-name {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--cream);
+      letter-spacing: -0.5px;
+      margin-bottom: 10px;
+    }
+
+    .footer-tagline {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(228, 223, 181, 0.45);
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+
+    .footer-made {
+      font-size: 12px;
+      color: rgba(154, 177, 122, 0.4);
+      font-weight: 500;
+    }
+
+    .footer-col-title {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--sage);
+      margin-bottom: 20px;
+    }
+
+    .footer-links {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .footer-links a {
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(228, 223, 181, 0.4);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: var(--sage-pale);
+    }
+
+    .footer-bar {
+      max-width: 1100px;
+      margin: 0 auto;
+      border-top: 1px solid rgba(154, 177, 122, 0.1);
+      padding: 24px 0 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .footer-bar-text {
+      font-size: 12px;
+      color: rgba(154, 177, 122, 0.35);
+      font-weight: 500;
+    }
+
+    /* ══════════════════════════════════════
+       LEARN YOUR WAY — Premium Bento Layout
+    ══════════════════════════════════════ */
+    .lyw-section {
+      background: #191f0e;
+      padding: 100px 56px 110px;
+    }
+
+    .lyw-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* Section header */
+    .lyw-top-header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+
+    .lyw-top-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--sage);
+      margin-bottom: 14px;
+    }
+
+    .lyw-top-title {
+      font-size: clamp(36px, 4.5vw, 56px);
+      font-weight: 800;
+      letter-spacing: -2px;
+      color: var(--sage-pale);
+      line-height: 1.05;
+      margin-bottom: 12px;
+    }
+
+    .lyw-top-sub {
+      font-size: 15px;
+      font-weight: 500;
+      color: rgba(228, 223, 181, 0.4);
+    }
+
+    /* Two cards */
+    .lyw-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .lyw-card {
+      background: var(--dark);
+      border-radius: 32px;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow:
+        0 3px 0 rgba(255, 255, 255, 0.07) inset,
+        0 32px 80px rgba(0, 0, 0, 0.35),
+        0 0 0 1px rgba(154, 177, 122, 0.15);
+    }
+
+    .lyw-card-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--sage);
+    }
+
+    .lyw-card-title {
+      font-size: clamp(28px, 2.8vw, 38px);
+      font-weight: 800;
+      letter-spacing: -1px;
+      line-height: 1.1;
+      color: var(--sage-pale);
+    }
+
+    .lyw-card-body {
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(228, 223, 181, 0.45);
+      line-height: 1.75;
+    }
+
+    /* Audio player */
+    .lyw-player {
+      margin-top: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(154, 177, 122, 0.15);
+      border-radius: 22px;
+      padding: 22px 24px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .lyw-player-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .lyw-player-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--cream);
+      margin-bottom: 4px;
+    }
+
+    .lyw-player-meta {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(154, 177, 122, 0.5);
+    }
+
+    .lyw-play-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--sage);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 6px rgba(154, 177, 122, 0.12), 0 0 0 12px rgba(154, 177, 122, 0.06);
+      animation: play-pulse 2.5s ease-in-out infinite;
+      cursor: pointer;
+    }
+
+    @keyframes play-pulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 6px rgba(154, 177, 122, 0.12), 0 0 0 12px rgba(154, 177, 122, 0.06);
+      }
+
+      50% {
+        box-shadow: 0 0 0 10px rgba(154, 177, 122, 0.18), 0 0 0 20px rgba(154, 177, 122, 0.08);
+      }
+    }
+
+    .lyw-progress-track {
+      height: 4px;
+      border-radius: 4px;
+      background: rgba(154, 177, 122, 0.12);
+      overflow: hidden;
+    }
+
+    .lyw-progress-fill {
+      height: 100%;
+      width: 32%;
+      background: linear-gradient(90deg, var(--sage-light), var(--sage));
+      border-radius: 4px;
+    }
+
+    .lyw-progress-times {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(154, 177, 122, 0.45);
+    }
+
+    /* Sound wave bars */
+    .lyw-wave {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      height: 40px;
+      justify-content: center;
+    }
+
+    .lyw-bar {
+      width: 3px;
+      background: var(--sage);
+      border-radius: 4px;
+      opacity: 0.65;
+      animation: lyw-sound 0.9s ease-in-out infinite;
+    }
+
+    @keyframes lyw-sound {
+
+      0%,
+      100% {
+        height: 3px;
+      }
+
+      50% {
+        height: 32px;
+      }
+    }
+
+    /* Offline cache list */
+    .lyw-cache-list {
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .lyw-cache-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(154, 177, 122, 0.12);
+      border-radius: 18px;
+      padding: 14px 18px;
+    }
+
+    .lyw-ci-1 {
+      border-color: rgba(154, 177, 122, 0.25);
+      background: rgba(154, 177, 122, 0.07);
+    }
+
+    .lyw-ci-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .lyw-ci-text {
+      flex: 1;
+    }
+
+    .lyw-ci-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--sage-pale);
+      margin-bottom: 2px;
+    }
+
+    .lyw-ci-meta {
+      font-size: 11px;
+      font-weight: 500;
+      color: rgba(228, 223, 181, 0.35);
+    }
+
+    .lyw-ci-badge {
+      font-size: 10px;
+      font-weight: 800;
+      color: #4ade80;
+      background: rgba(74, 222, 128, 0.08);
+      border: 1px solid rgba(74, 222, 128, 0.2);
+      border-radius: 20px;
+      padding: 4px 10px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .lyw-cache-footer {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(154, 177, 122, 0.35);
+      padding: 4px 4px;
+    }
+
+    .lyw-ci-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(154, 177, 122, 0.35);
+      flex-shrink: 0;
+    }
+
+    /* ══════════════════════════════════════
+       STUDY COMMAND CENTER
+    ══════════════════════════════════════ */
+    .scc-section {
+      background: #191f0e;
+      padding: 100px 56px 120px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .scc-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Top header */
+    .scc-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 56px;
+      gap: 40px;
+      flex-wrap: wrap;
+    }
+
+    .scc-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--sage);
+      margin-bottom: 16px;
+    }
+
+    .scc-headline {
+      font-size: clamp(34px, 4vw, 54px);
+      font-weight: 800;
+      letter-spacing: -2px;
+      line-height: 1.05;
+      color: var(--sage-pale);
+      margin-bottom: 18px;
+    }
+
+    .scc-body {
+      font-size: 15px;
+      font-weight: 500;
+      color: rgba(228, 223, 181, 0.45);
+      line-height: 1.8;
+      max-width: 440px;
+      margin-bottom: 32px;
+    }
+
+    .scc-cta {
+      display: inline-block;
+      background: var(--sage);
+      color: var(--dark);
+      font-size: 14px;
+      font-weight: 800;
+      border: none;
+      border-radius: 60px;
+      padding: 14px 28px;
+      cursor: pointer;
+      font-family: inherit;
+      letter-spacing: -0.2px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 8px 24px rgba(154, 177, 122, 0.25);
+    }
+
+    .scc-cta:hover {
+      transform: scale(1.05) translateY(-2px);
+      box-shadow: 0 16px 40px rgba(154, 177, 122, 0.35);
+    }
+
+    /* Anti-gravity float */
+    @keyframes ag-float-a {
+
+      0%,
+      100% {
+        transform: translateY(0px)
+      }
+
+      50% {
+        transform: translateY(-10px)
+      }
+    }
+
+    @keyframes ag-float-b {
+
+      0%,
+      100% {
+        transform: translateY(0px)
+      }
+
+      50% {
+        transform: translateY(-14px)
+      }
+    }
+
+    @keyframes ag-float-c {
+
+      0%,
+      100% {
+        transform: translateY(0px)
+      }
+
+      50% {
+        transform: translateY(-8px)
+      }
+    }
+
+    @keyframes scc-shake {
+
+      0%,
+      100% {
+        transform: translateX(0)
+      }
+
+      20% {
+        transform: translateX(-4px)
+      }
+
+      40% {
+        transform: translateX(4px)
+      }
+
+      60% {
+        transform: translateX(-3px)
+      }
+
+      80% {
+        transform: translateX(3px)
+      }
+    }
+
+    /* Dashboard showcase grid */
+    .scc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.7fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* Big dashboard card*/
+    .scc-db-card {
+      background: rgba(195, 204, 155, 0.12);
+      border: 1px solid rgba(154, 177, 122, 0.25);
+      border-radius: 36px;
+      padding: 36px;
+      box-shadow:
+        0 3px 0 rgba(255, 255, 255, 0.06) inset,
+        0 40px 100px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(154, 177, 122, 0.2);
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      animation: ag-float-b 5.5s ease-in-out infinite;
+    }
+
+    /* Greeting row */
+    .scc-greeting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .scc-greeting {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--sage-pale);
+      letter-spacing: -0.5px;
+    }
+
+    .scc-streak {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(154, 177, 122, 0.15);
+      border: 1px solid rgba(154, 177, 122, 0.3);
+      border-radius: 40px;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--sage-pale);
+    }
+
+    /* Bar chart */
+    .scc-chart-title {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(154, 177, 122, 0.5);
+      margin-bottom: 4px;
+    }
+
+    .scc-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .scc-bar-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .scc-bar-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(228, 223, 181, 0.55);
+    }
+
+    .scc-bar-track {
+      height: 12px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.06);
+      overflow: hidden;
+    }
+
+    .scc-bar-fill {
+      height: 100%;
+      border-radius: 12px;
+      width: 0%;
+      background: linear-gradient(90deg, #9AB17A, #C3CC9B);
+      transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .scc-bar-fill.maths {
+      background: linear-gradient(90deg, #E4DFB5, #C3CC9B);
+    }
+
+    .scc-bar-fill.chem {
+      background: linear-gradient(90deg, #9AB17A, #C3CC9B);
+    }
+
+    .scc-bar-fill.phys {
+      background: linear-gradient(90deg, #6d8f45, #9AB17A);
+    }
+
+    .scc-chart-caption {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(154, 177, 122, 0.45);
+      font-style: italic;
+    }
+
+    /* Sidebar cards */
+    .scc-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .scc-side-card {
+      border-radius: 28px;
+      padding: 28px;
+      box-shadow:
+        0 3px 0 rgba(255, 255, 255, 0.05) inset,
+        0 24px 60px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(154, 177, 122, 0.15);
+    }
+
+    .scc-weak-card {
+      background: rgba(228, 170, 100, 0.06);
+      border: 1px solid rgba(228, 170, 100, 0.2);
+      animation: ag-float-a 4.2s ease-in-out infinite;
+    }
+
+    .scc-weak-card:hover {
+      animation: scc-shake 0.6s ease-in-out;
+    }
+
+    .scc-offline-card {
+      background: rgba(154, 177, 122, 0.08);
+      border: 1px solid rgba(154, 177, 122, 0.18);
+      animation: ag-float-c 6s ease-in-out infinite;
+    }
+
+    .scc-gauge-card {
+      background: var(--dark);
+      border: 1px solid rgba(154, 177, 122, 0.18);
+      animation: ag-float-a 4.8s ease-in-out 0.5s infinite;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .scc-side-label {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .scc-weak-label {
+      color: rgba(228, 170, 100, 0.7);
+    }
+
+    .scc-offline-label {
+      color: var(--sage);
+    }
+
+    .scc-gauge-label-text {
+      color: rgba(154, 177, 122, 0.5);
+    }
+
+    .scc-weak-items {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .scc-weak-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(228, 223, 181, 0.7);
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 12px;
+      padding: 10px 14px;
+    }
+
+    .scc-weak-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(228, 150, 80, 0.6);
+      flex-shrink: 0;
+    }
+
+    .scc-rescan-btn {
+      width: 100%;
+      margin-top: 14px;
+      background: rgba(228, 170, 100, 0.1);
+      border: 1px solid rgba(228, 170, 100, 0.25);
+      border-radius: 20px;
+      padding: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(228, 170, 100, 0.8);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .scc-rescan-btn:hover {
+      background: rgba(228, 170, 100, 0.18);
+    }
+
+    .scc-cache-items {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .scc-cache-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(228, 223, 181, 0.55);
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(154, 177, 122, 0.08);
+    }
+
+    .scc-cache-item:last-child {
+      border-bottom: none;
+    }
+
+    .scc-cache-check {
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    /* Circular gauge */
+    .scc-gauge-svg {
+      width: 110px;
+      height: 110px;
+    }
+
+    .scc-gauge-pct {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--sage-pale);
+      letter-spacing: -1px;
+    }
+
+    .scc-gauge-sub {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(154, 177, 122, 0.45);
+      text-align: center;
+    }
+
+    /* Quick stat boxes */
+    .scc-stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 4px;
+    }
+
+    .scc-stat-box {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(154, 177, 122, 0.12);
+      border-radius: 18px;
+      padding: 16px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    .scc-stat-box:hover {
+      background: rgba(154, 177, 122, 0.08);
+      transform: translateY(-3px);
+    }
+
+    .scc-stat-num {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--sage-pale);
+      letter-spacing: -0.8px;
+    }
+
+    .scc-stat-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: rgba(154, 177, 122, 0.45);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* Hover lift for all scc cards */
+    .scc-db-card:hover,
+    .scc-side-card:hover {
+      box-shadow:
+        0 3px 0 rgba(255, 255, 255, 0.07) inset,
+        0 48px 120px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(154, 177, 122, 0.28);
+    }
+
+    /* ══════════════════════════════════════
+       EXAM KI TAIYARI
+    ══════════════════════════════════════ */
+    .ekt-section {
+      background: #191f0e;
+      padding: 100px 56px 120px;
+    }
+
+    .ekt-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .ekt-header {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+      margin-bottom: 60px;
+    }
+
+    .ekt-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--sage);
+      margin-bottom: 16px;
+    }
+
+    .ekt-headline {
+      font-size: clamp(32px, 4vw, 52px);
+      font-weight: 800;
+      letter-spacing: -2px;
+      line-height: 1.05;
+      color: var(--sage-pale);
+      margin-bottom: 18px;
+    }
+
+    .ekt-sub {
+      font-size: 15px;
+      font-weight: 500;
+      color: rgba(228, 223, 181, 0.4);
+      line-height: 1.8;
+      margin-bottom: 32px;
+    }
+
+    .ekt-cta {
+      background: var(--sage-light);
+      color: var(--dark);
+      border: none;
+      border-radius: 60px;
+      padding: 16px 32px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: 0 4px 0 rgba(255, 255, 255, 0.3) inset, 0 16px 40px rgba(154, 177, 122, 0.22);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .ekt-cta:hover {
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 4px 0 rgba(255, 255, 255, 0.3) inset, 0 24px 50px rgba(154, 177, 122, 0.3);
+    }
+
+    /* Main layout: model answer + sidecards */
+    .ekt-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* Model Answer card */
+    .ekt-answer-card {
+      background: rgba(195, 204, 155, 0.09);
+      border: 1px solid rgba(154, 177, 122, 0.22);
+      border-radius: 36px;
+      padding: 36px;
+      box-shadow:
+        0 3px 0 rgba(255, 255, 255, 0.06) inset,
+        0 40px 100px rgba(0, 0, 0, 0.4);
+    }
+
+    .ekt-ai-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(154, 177, 122, 0.12);
+      border: 1px solid rgba(154, 177, 122, 0.25);
+      border-radius: 40px;
+      padding: 7px 16px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: var(--sage-pale);
+      margin-bottom: 24px;
+    }
+
+    .ekt-badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--sage);
+      animation: pulse-ring 1.8s ease-out infinite;
+    }
+
+    .ekt-question {
+      font-size: 14px;
+      font-weight: 700;
+      color: rgba(228, 223, 181, 0.5);
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(154, 177, 122, 0.12);
+    }
+
+    .ekt-answer-title {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--sage);
+      margin-bottom: 16px;
+    }
+
+    .ekt-points {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .ekt-point {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(154, 177, 122, 0.1);
+      border-radius: 16px;
+      padding: 14px 16px;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.5s, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .ekt-point.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .ekt-point:nth-child(1) {
+      transition-delay: 0.1s;
+    }
+
+    .ekt-point:nth-child(2) {
+      transition-delay: 0.3s;
+    }
+
+    .ekt-point:nth-child(3) {
+      transition-delay: 0.5s;
+    }
+
+    .ekt-point-num {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--dark);
+      background: var(--sage);
+      border-radius: 8px;
+      padding: 3px 8px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .ekt-point-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(228, 223, 181, 0.75);
+      line-height: 1.6;
+    }
+
+    /* Sidebar cards */
+    .ekt-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .ekt-side-card {
+      border-radius: 28px;
+      padding: 28px;
+      box-shadow:
+        0 3px 0 rgba(255, 255, 255, 0.05) inset,
+        0 20px 50px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(154, 177, 122, 0.12);
+    }
+
+    .ekt-diff-card {
+      background: rgba(154, 177, 122, 0.08);
+      border: 1px solid rgba(154, 177, 122, 0.18);
+    }
+
+    .ekt-mark-card {
+      background: rgba(228, 223, 181, 0.05);
+      border: 1px solid rgba(228, 223, 181, 0.1);
+    }
+
+    .ekt-side-label {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--sage);
+      margin-bottom: 16px;
+    }
+
+    /* Difficulty toggle */
+    .ekt-toggle {
+      display: flex;
+      border-radius: 14px;
+      background: rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .ekt-tog-opt {
+      flex: 1;
+      padding: 9px 6px;
+      font-size: 10px;
+      font-weight: 800;
+      text-align: center;
+      color: rgba(154, 177, 122, 0.45);
+      cursor: pointer;
+      transition: all 0.2s;
+      border-radius: 12px;
+    }
+
+    .ekt-tog-opt.active {
+      background: var(--sage-light);
+      color: var(--dark);
+    }
+
+    .ekt-diff-qs {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .ekt-diff-q {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(228, 223, 181, 0.55);
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 12px;
+      padding: 10px 12px;
+      border-left: 3px solid var(--sage);
+    }
+
+    .ekt-mark-icon {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    .ekt-mark-text {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(228, 223, 181, 0.55);
+      line-height: 1.65;
+    }
+
+    .ekt-mark-text strong {
+      color: var(--sage-pale);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ═══════════════ NAV ═══════════════ -->
+  <nav>
+    <div class="nav-logo cursor-pointer" onclick="window.location.href='index.html'">StemVI</div>
+    <ul class="nav-links">
+      <li><a href="scan-explain.html">Scan</a></li>
+      <li><a href="Doubt_Bot.html">Doubt-Bot</a></li>
+      <li><a href="Flashcards.html">Flashcards</a></li>
+      <li><a href="Dashboard.html">Dashboard</a></li>
+    </ul>
+    <button class="nav-cta" onclick="window.location.href='Authentication.html'">Get Started →</button>
+  </nav>
+
+  <!-- ═══════════════ HERO ═══════════════ -->
+  <section class="hero">
+
+    <!-- BG Layers -->
+    <div class="bg-glow"></div>
+    <div class="bg-grid"></div>
+    <canvas id="particles"></canvas>
+
+    <!-- ── FLOATING CARDS LAYER ── -->
+    <div class="floaters">
+
+      <!-- CARD 1 · AI Explanation · FRONT · upper-center -->
+      <div class="clay c1">
+        <div class="card-label" style="color:#9AB17A;">🤖 AI Explanation</div>
+        <div class="card-title" style="color:#1e2511; font-size:14px;">Database kya hota hai?</div>
+        <p class="card-body" style="color:#3d4a22;">
+          Bhai, soch — database bilkul ek
+          <strong style="color:#5a7030;">Kirana Store ledger</strong> jaisa hai!
+          Jaise dukandaar naam, udhaari, date — sab ek register mein organize karta hai,
+          waise hi computer apna data organise karta hai.
+          <span style="color:#9AB17A; font-weight:700;">Crystal clear? 🙌</span>
+        </p>
+        <div style="margin-top:2px;">
+          <span class="tag">Hinglish ✓</span>
+          <span class="tag">CS Basics</span>
+        </div>
+      </div>
+
+      <!-- CARD 2 · Analogy · BACK · upper-left -->
+      <div class="clay c2">
+        <div class="card-label" style="color:rgba(30,37,17,0.5);">💡 Local Analogy</div>
+        <div class="card-title" style="color:#1e2511;">Database = Kirana Ledger</div>
+        <p class="card-body" style="color:rgba(30,37,17,0.65);">Har transaction, udhaari, stock — ekdum organized!</p>
+      </div>
+
+      <!-- CARD 3 · Listening Pill · upper-right -->
+      <div class="clay c3">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <span style="font-size:15px;">🎙</span>
+          <span style="font-size:12px; font-weight:700; color:var(--sage);">Listening...</span>
+        </div>
+        <div class="wave">
+          <div class="bar" style="animation-delay:0.00s"></div>
+          <div class="bar" style="animation-delay:0.12s"></div>
+          <div class="bar" style="animation-delay:0.24s"></div>
+          <div class="bar" style="animation-delay:0.36s"></div>
+          <div class="bar" style="animation-delay:0.48s"></div>
+          <div class="bar" style="animation-delay:0.60s"></div>
+          <div class="bar" style="animation-delay:0.72s"></div>
+        </div>
+      </div>
+
+      <!-- CARD 4 · Flashcard Q&A · FRONT · bottom-left -->
+      <div class="clay c4">
+        <div class="card-label" style="color:#9AB17A;">📚 Exam Prep Card</div>
+        <div class="card-title" style="color:#1e2511;">Q: Newton's 3rd Law kya hai?</div>
+        <div style="border-left:2px solid #9AB17A; padding-left:10px;">
+          <p class="card-body" style="color:#3d4a22;">
+            A: Every action has an equal &amp; opposite reaction.
+            Jaise cricket ball bat ko push karta hai — bat bhi ball ko push karta hai! ⚡
+          </p>
+        </div>
+        <div style="margin-top:10px; font-size:10px; font-weight:700; color:rgba(154,177,122,0.75);">
+          ✅ Model Answer · 5 Marks
+        </div>
+      </div>
+
+      <!-- CARD 5 · Progress Ring · bottom-right -->
+      <div class="c5">
+        <svg class="progress-svg" width="95" height="95" viewBox="0 0 90 90"
+          style="position:absolute;top:10px;left:10px;">
+          <circle class="ring-track" cx="45" cy="45" r="35" fill="none" stroke-width="5" />
+          <circle class="ring-fill" cx="45" cy="45" r="35" fill="none" stroke-width="5" stroke-linecap="round"
+            stroke-dasharray="220" stroke-dashoffset="220" />
+        </svg>
+        <div style="text-align:center; z-index:1; position:relative;">
+          <div style="font-size:18px; font-weight:800; color:var(--sage); line-height:1;">78%</div>
+          <div
+            style="font-size:9px; font-weight:700; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:0.07em; margin-top:2px;">
+            Physics</div>
+        </div>
+      </div>
+
+      <!-- Tiny: Room Code badge -->
+      <div class="t-room">Max Your Stats.</div>
+
+      <!-- Tiny: Mic bubble -->
+      <div class="t-mic">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#9AB17A" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+          <line x1="12" y1="19" x2="12" y2="23" />
+          <line x1="8" y1="23" x2="16" y2="23" />
+        </svg>
+      </div>
+
+      <!-- Tiny: Scan bubble -->
+      <div class="t-scan">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgba(228,223,181,0.75)" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 6 23 1 18 1" />
+          <line x1="16" y1="8" x2="23" y2="1" />
+          <polyline points="1 18 1 23 6 23" />
+          <line x1="8" y1="16" x2="1" y2="23" />
+        </svg>
+      </div>
+
+    </div><!-- /floaters -->
+
+    <!-- ── HERO TEXT + CTA ── -->
+    <div class="hero-content">
+      <h1 class="h1-main">Padho Smarter.</h1>
+      <h1 class="h1-italic">Socho Deeper.</h1>
+      <p class="subtitle">AI-powered learning for every Indian student</p>
+      <div class="cta-group">
+        <button class="btn-scan" onclick="window.location.href='scan-explain.html'">📄 Scan My Notes</button>
+        <button class="btn-doubt" onclick="window.location.href='Doubt_Bot.html'">🤔 Ask a Doubt</button>
+      </div>
+    </div>
+
+    <!-- Scroll hint -->
+    <div class="scroll-hint">
+      <span>Scroll</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(228,223,181,0.6)" stroke-width="2.5"
+        stroke-linecap="round">
+        <path d="M12 5v14M5 12l7 7 7-7" />
+      </svg>
+    </div>
+
+  </section>
+
+  <!-- ── Scroll blur wrapper (bento + HIW only) ── -->
+  <div class="scroll-blur-wrap">
+
+    <!-- ═══════════════ BENTO FEATURES ═══════════════ -->
+    <section class="bento-section">
+
+      <div class="bento-header">
+        <div class="bento-label">FEATURES</div>
+        <h2 class="bento-title">Everything You Need to<br>Top Your Exams</h2>
+      </div>
+
+      <div class="bento-grid">
+
+        <!-- ── ROW 1 ── -->
+
+        <!-- CARD A: OCR Scanner — 2/3 wide, cream -->
+        <div class="bc bc-a">
+          <div class="bc-top">
+            <span class="bc-badge">OCR SCANNER</span>
+            <h3 class="bc-headline">Scan.<br>Understand.<br>Excel.</h3>
+          </div>
+          <div class="bc-scan-mock">
+            <div class="scan-lines">
+              <div class="scan-line sl-1"></div>
+              <div class="scan-line sl-2"></div>
+              <div class="scan-line sl-3"></div>
+              <div class="scan-line sl-4"></div>
+              <div class="scan-line sl-5"></div>
+              <div class="scan-line sl-6"></div>
+            </div>
+            <div class="scan-beam"></div>
+            <div class="scan-corner tl"></div>
+            <div class="scan-corner tr"></div>
+            <div class="scan-corner bl"></div>
+            <div class="scan-corner br"></div>
+          </div>
+          <div class="bc-foot-tag">Works on handwriting &nbsp;·&nbsp; textbooks &nbsp;·&nbsp; whiteboards</div>
+        </div>
+
+        <!-- CARD B: Hinglish Explainer — 1/3 narrow, dark green -->
+        <div class="bc bc-b">
+          <span class="bc-badge bc-badge-sage">HINGLISH AI</span>
+          <p class="bc-hinglish-text">
+            "Photosynthesis matlab —<br>
+            <em>podhon ka apna khana<br>
+              banana ka process</em> 🌿"
+          </p>
+          <div class="bc-hinglish-foot">50% English &nbsp;+&nbsp; 50% Hindi</div>
+        </div>
+
+        <!-- ── ROW 2 ── -->
+
+        <!-- CARD C: Exam Prep — 1/3 narrow, sage -->
+        <div class="bc bc-c">
+          <span class="bc-badge bc-badge-dark">EXPECTED EXAM QUESTIONS</span>
+          <ul class="bc-q-list">
+            <li class="bc-q-item">
+              <span class="bc-q-num">Q1</span>
+              <span>Define osmosis with diagram.</span>
+            </li>
+            <li class="bc-q-item">
+              <span class="bc-q-num">Q2</span>
+              <span>State Newton's 3rd Law.</span>
+            </li>
+            <li class="bc-q-item">
+              <span class="bc-q-num">Q3</span>
+              <span>Explain with a real-world example.</span>
+            </li>
+          </ul>
+          <div class="bc-q-foot">AI generates these from your scan →</div>
+        </div>
+
+        <!-- CARD D: Group Study Sync — 2/3 wide, dark green -->
+        <div class="bc bc-d">
+          <span class="bc-badge bc-badge-sage">GROUP STUDY SYNC</span>
+          <div class="bc-d-inner">
+            <div class="bc-room-code">XX1234</div>
+            <div class="bc-d-right">
+              <div class="bc-avatars">
+                <div class="bc-av" style="background:#9AB17A; color:#1e2511;">A</div>
+                <div class="bc-av" style="background:#C3CC9B; color:#1e2511;">R</div>
+                <div class="bc-av" style="background:#E4DFB5; color:#1e2511;">P</div>
+                <div class="bc-av" style="background:#FBE8CE; color:#1e2511;">K</div>
+              </div>
+              <div class="bc-live">
+                <span class="bc-pulse"></span>
+                <span class="bc-live-text">4 friends studying now</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── ROW 3 — Full width strip ── -->
+        <div class="bc bc-strip">
+          <div class="bc-strip-cell">
+            <div class="bc-strip-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1e2511" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+              </svg>
+            </div>
+            <div class="bc-strip-name">Listen Mode</div>
+            <p class="bc-strip-desc">Commuting se padho. Explanation sunao, notes ki zaroorat nahi.</p>
+          </div>
+          <div class="bc-strip-divider"></div>
+          <div class="bc-strip-cell">
+            <div class="bc-strip-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1e2511" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+            </div>
+            <div class="bc-strip-name">Offline Cache</div>
+            <p class="bc-strip-desc">Last 5 scans always saved. No WiFi? No problem. Bihar mein bhi chalega.</p>
+          </div>
+          <div class="bc-strip-divider"></div>
+          <div class="bc-strip-cell">
+            <div class="bc-strip-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1e2511" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10" />
+                <line x1="12" y1="20" x2="12" y2="4" />
+                <line x1="6" y1="20" x2="6" y2="14" />
+              </svg>
+            </div>
+            <div class="bc-strip-name">Progress Dashboard</div>
+            <p class="bc-strip-desc">Dekhte raho kahan weak ho. Physics? Chemistry? AI batayega.</p>
+          </div>
+        </div>
+
+      </div><!-- /bento-grid -->
+    </section>
+
+    <!-- ═══════════════ HOW IT WORKS ═══════════════ -->
+    <section class="hiw-section">
+
+      <div class="hiw-header">
+        <div class="hiw-label">HOW IT WORKS</div>
+        <h2 class="hiw-title">Scan to Understanding<br>in 30 Seconds</h2>
+      </div>
+
+      <div class="hiw-steps">
+
+        <!-- Step 01 -->
+        <div class="hiw-card">
+          <div class="hiw-watermark">01</div>
+          <div class="hiw-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9AB17A" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+              <circle cx="12" cy="13" r="4" />
+            </svg>
+          </div>
+          <div class="hiw-step-label">STEP 01 &nbsp;—&nbsp; SCAN</div>
+          <h3 class="hiw-card-title">Point &amp; Scan</h3>
+          <p class="hiw-card-body">Photograph your handwritten notes, a textbook page, or a whiteboard. Our OCR reads it
+            all — even the messiest handwriting.</p>
+        </div>
+
+        <!-- Arrow 1 -->
+        <div class="hiw-arrow" aria-hidden="true">
+          <svg width="80" height="24" viewBox="0 0 80 24" fill="none">
+            <line x1="0" y1="12" x2="64" y2="12" stroke="rgba(30,37,17,0.2)" stroke-width="2" stroke-dasharray="6 5" />
+            <polyline points="60,6 72,12 60,18" stroke="rgba(30,37,17,0.25)" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" fill="none" />
+          </svg>
+        </div>
+
+        <!-- Step 02 -->
+        <div class="hiw-card">
+          <div class="hiw-watermark">02</div>
+          <div class="hiw-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9AB17A" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              <text x="12" y="13" text-anchor="middle" font-size="9" fill="#9AB17A" font-family="serif"
+                font-weight="700" stroke="none">अ</text>
+            </svg>
+          </div>
+          <div class="hiw-step-label">STEP 02 &nbsp;—&nbsp; UNDERSTAND</div>
+          <h3 class="hiw-card-title">Get Hinglish Explanation</h3>
+          <p class="hiw-card-body">AI explains the concept in simple English + Hindi with a desi analogy you'll never
+            forget. Crystal clear, every time.</p>
+        </div>
+
+        <!-- Arrow 2 -->
+        <div class="hiw-arrow" aria-hidden="true">
+          <svg width="80" height="24" viewBox="0 0 80 24" fill="none">
+            <line x1="0" y1="12" x2="64" y2="12" stroke="rgba(154,177,122,0.25)" stroke-width="2"
+              stroke-dasharray="6 5" />
+            <polyline points="60,6 72,12 60,18" stroke="rgba(154,177,122,0.35)" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" fill="none" />
+          </svg>
+        </div>
+
+        <!-- Step 03 -->
+        <div class="hiw-card">
+          <div class="hiw-watermark">03</div>
+          <div class="hiw-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9AB17A" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="9 12 11 14 15 10" />
+            </svg>
+          </div>
+          <div class="hiw-step-label">STEP 03 &nbsp;—&nbsp; PRACTICE</div>
+          <h3 class="hiw-card-title">Test Yourself</h3>
+          <p class="hiw-card-body">Auto-generated flashcards and expected exam questions with model answers. Exactly how
+            examiners want it written.</p>
+        </div>
+
+      </div>
+    </section>
+
+  </div><!-- /scroll-blur-wrap -->
+
+  <!-- ════════════════ STUDY COMMAND CENTER ════════════════ -->
+  <section class="scc-section">
+    <div class="scc-inner">
+
+      <!-- Text header -->
+      <div class="scc-header">
+        <div>
+          <div class="scc-label">PROGRESS DASHBOARD</div>
+          <h2 class="scc-headline">Identify Your Weak Spots.<br>Automatically.</h2>
+          <p class="scc-body">StemVI tracks every scan to tell you exactly where you're struggling. No more guessing
+            what to study before the internals.</p>
+          <button class="scc-cta" onclick="window.location.href='dashboard/dashboard.html'">View My Stats →</button>
+        </div>
+      </div>
+
+      <!-- Dashboard grid -->
+      <div class="scc-grid">
+
+        <!-- Sidebar -->
+        <div class="scc-sidebar">
+
+          <!-- Weak Areas -->
+          <div class="scc-side-card scc-weak-card">
+            <div class="scc-side-label scc-weak-label">ATTENTION NEEDED</div>
+            <div class="scc-weak-items">
+              <div class="scc-weak-item"><span class="scc-weak-dot"></span>Integration (Maths)</div>
+              <div class="scc-weak-item"><span class="scc-weak-dot"></span>Organic Chemistry</div>
+              <div class="scc-weak-item"><span class="scc-weak-dot"></span>Thermodynamics</div>
+            </div>
+            <button class="scc-rescan-btn">Re-scan these notes →</button>
+          </div>
+
+          <!-- Offline Cache -->
+          <div class="scc-side-card scc-offline-card">
+            <div class="scc-side-label scc-offline-label">SAVED FOR LATER</div>
+            <div class="scc-cache-items">
+              <div class="scc-cache-item"><span class="scc-cache-check">✅</span> Physics: Newton's 3rd Law</div>
+              <div class="scc-cache-item"><span class="scc-cache-check">✅</span> Chem: Organic Reactions</div>
+              <div class="scc-cache-item"><span class="scc-cache-check">✅</span> Maths: Integration</div>
+            </div>
+          </div>
+
+          <!-- Exam Readiness Gauge -->
+          <div class="scc-side-card scc-gauge-card">
+            <div class="scc-side-label scc-gauge-label-text">EXAM READINESS</div>
+            <svg class="scc-gauge-svg" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="48" fill="none" stroke="rgba(154,177,122,0.12)" stroke-width="12" />
+              <circle id="scc-gauge-arc" cx="60" cy="60" r="48" fill="none" stroke="url(#scc-grad)" stroke-width="12"
+                stroke-linecap="round" stroke-dasharray="301.6" stroke-dashoffset="301.6"
+                transform="rotate(-90 60 60)" />
+              <defs>
+                <linearGradient id="scc-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#9AB17A" />
+                  <stop offset="100%" stop-color="#E4DFB5" />
+                </linearGradient>
+              </defs>
+              <text x="60" y="55" text-anchor="middle" font-size="22" font-weight="800" fill="#E4DFB5"
+                font-family="inherit">82%</text>
+              <text x="60" y="72" text-anchor="middle" font-size="9" font-weight="600" fill="rgba(154,177,122,0.5)"
+                font-family="inherit">Syllabus Scanned</text>
+            </svg>
+          </div>
+
+        </div>
+
+        <!-- Big Dashboard Card -->
+        <div class="scc-db-card">
+
+          <!-- Greeting + streak -->
+          <div class="scc-greeting-row">
+            <div class="scc-greeting">Kya haal hai, Aryan! 🌿</div>
+            <div class="scc-streak">
+              <span style="font-size:16px">🔥</span>
+              7-Day Study Streak
+            </div>
+          </div>
+
+          <!-- Bar chart -->
+          <div>
+            <div class="scc-chart-title">Scan Frequency by Subject</div>
+            <div class="scc-bars">
+              <div class="scc-bar-row">
+                <div class="scc-bar-meta"><span>Physics</span><span>85%</span></div>
+                <div class="scc-bar-track">
+                  <div class="scc-bar-fill phys" data-width="85"></div>
+                </div>
+              </div>
+              <div class="scc-bar-row">
+                <div class="scc-bar-meta"><span>Chemistry</span><span>60%</span></div>
+                <div class="scc-bar-track">
+                  <div class="scc-bar-fill chem" data-width="60"></div>
+                </div>
+              </div>
+              <div class="scc-bar-row">
+                <div class="scc-bar-meta"><span>Maths</span><span>45%</span></div>
+                <div class="scc-bar-track">
+                  <div class="scc-bar-fill maths" data-width="45"></div>
+                </div>
+              </div>
+              <div class="scc-bar-row">
+                <div class="scc-bar-meta"><span>Biology</span><span>20%</span></div>
+                <div class="scc-bar-track">
+                  <div class="scc-bar-fill" data-width="20"></div>
+                </div>
+              </div>
+            </div>
+            <p class="scc-chart-caption" style="margin-top:16px">Physics is your strength, but Maths needs more scans!
+            </p>
+          </div>
+
+          <!-- Quick stat boxes -->
+          <div class="scc-stats-row">
+            <div class="scc-stat-box">
+              <div class="scc-stat-num">48</div>
+              <div class="scc-stat-label">Total Scans</div>
+            </div>
+            <div class="scc-stat-box">
+              <div class="scc-stat-num">23</div>
+              <div class="scc-stat-label">Topics Mastered</div>
+            </div>
+            <div class="scc-stat-box">
+              <div class="scc-stat-num">76%</div>
+              <div class="scc-stat-label">Avg Score</div>
+            </div>
+            <div class="scc-stat-box">
+              <div class="scc-stat-num">14</div>
+              <div class="scc-stat-label">Days Active</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ DEMO SECTION ════════════════ -->
+  <section class="demo-section">
+
+    <div class="demo-header">
+      <div class="demo-label">LIVE DEMO</div>
+      <h2 class="demo-title">Watch StemVI Think</h2>
+      <p class="demo-sub">Real explanation. Real student notes. Real results.</p>
+    </div>
+
+    <div class="demo-card">
+
+      <!-- LEFT: Scanned Note -->
+      <div class="demo-left">
+        <div class="demo-panel-label demo-panel-label-scan"> &nbsp;Scanned Note</div>
+
+        <div class="demo-note">
+          <p class="demo-note-text">
+            Newton's 3rd Law —<br>
+            every action has an equal<br>
+            &amp; opposite reaction.<br>
+            F = ma. momentum<br>
+            conserved.<br>
+            eg: rocket propulsion...
+          </p>
+        </div>
+
+        <div class="demo-scan-btn">
+          <div class="demo-scan-label">
+            <span class="demo-scan-dot"></span>
+            Scanning...
+          </div>
+          <div class="demo-bar-track">
+            <div class="demo-bar-fill"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: AI Explanation -->
+      <div class="demo-right">
+        <div class="demo-panel-label demo-panel-label-ai"> &nbsp;AI Explanation</div>
+
+        <div class="demo-topic-badge">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1e2511" stroke-width="2.5"
+            stroke-linecap="round">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 8v4l3 3" />
+          </svg>
+          Newton's Third Law
+        </div>
+
+        <p class="demo-explanation">
+          Newton ka 3rd law simple hai — jab tu kisi cheez ko
+          dhakelta hai, <strong>woh cheez tujhe wapas dhakeil deti hai.</strong>
+          Rocket mein yahi hota hai — neeche gas push hoti hai,
+          rocket upar jaata hai! 🚀
+        </p>
+
+        <div class="demo-analogy-pill">
+          <div class="demo-analogy-title"> &nbsp;Local Analogy</div>
+          <p class="demo-analogy-text">
+            Socho jaise cricket mein bat ball ko maarta hai —
+            ball bhi bat ko equally maarti hai.
+            Bas itna hi hai Newton ka law!
+          </p>
+        </div>
+
+        <div class="demo-action-row">
+          <button class="demo-action-btn">🃏 Flashcards</button>
+          <button class="demo-action-btn">📝 Exam Questions</button>
+          <button class="demo-action-btn">🔊 Listen</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ════════════════ LEARN YOUR WAY ════════════════ -->
+  <section class="lyw-section">
+    <div class="lyw-inner">
+
+      <!-- Header -->
+      <div class="lyw-top-header">
+        <div class="lyw-top-label">POWER FEATURES</div>
+        <h2 class="lyw-top-title">Learn Your Way</h2>
+        <p class="lyw-top-sub">Voice-first learning. Offline access. No excuses.</p>
+      </div>
+
+      <!-- Two large cards -->
+      <div class="lyw-cards">
+
+        <!-- CARD 1: Listen Mode -->
+        <div class="lyw-card lyw-card-listen">
+          <div class="lyw-card-label">🎙️ &nbsp;LISTEN MODE</div>
+          <h3 class="lyw-card-title">Padho, Jab<br>Travel Karo.</h3>
+          <p class="lyw-card-body">Turn any explanation into a natural voiceover. Learn on the bus, metro, or walking to
+            the mess.</p>
+
+          <!-- Big audio player -->
+          <div class="lyw-player">
+            <div class="lyw-player-top">
+              <div class="lyw-player-track">
+                <div class="lyw-player-title">Photosynthesis — Hinglish</div>
+                <div class="lyw-player-meta">Biology · Chapter 6 · 3:42 min</div>
+              </div>
+              <div class="lyw-play-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="#1e2511">
+                  <polygon points="5,3 19,12 5,21" />
+                </svg>
+              </div>
+            </div>
+            <!-- Progress bar -->
+            <div class="lyw-progress-track">
+              <div class="lyw-progress-fill"></div>
+            </div>
+            <div class="lyw-progress-times">
+              <span>1:14</span><span>3:42</span>
+            </div>
+            <!-- Wave -->
+            <div class="lyw-wave">
+              <div class="lyw-bar" style="animation-delay:0.00s"></div>
+              <div class="lyw-bar" style="animation-delay:0.08s"></div>
+              <div class="lyw-bar" style="animation-delay:0.16s"></div>
+              <div class="lyw-bar" style="animation-delay:0.24s"></div>
+              <div class="lyw-bar" style="animation-delay:0.32s"></div>
+              <div class="lyw-bar" style="animation-delay:0.40s"></div>
+              <div class="lyw-bar" style="animation-delay:0.48s"></div>
+              <div class="lyw-bar" style="animation-delay:0.56s"></div>
+              <div class="lyw-bar" style="animation-delay:0.64s"></div>
+              <div class="lyw-bar" style="animation-delay:0.72s"></div>
+              <div class="lyw-bar" style="animation-delay:0.80s"></div>
+              <div class="lyw-bar" style="animation-delay:0.88s"></div>
+              <div class="lyw-bar" style="animation-delay:0.96s"></div>
+              <div class="lyw-bar" style="animation-delay:1.04s"></div>
+              <div class="lyw-bar" style="animation-delay:1.12s"></div>
+              <div class="lyw-bar" style="animation-delay:1.20s"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 2: Offline Cache -->
+        <div class="lyw-card lyw-card-offline">
+          <div class="lyw-card-label">📶 &nbsp;OFFLINE MINI-CACHE</div>
+          <h3 class="lyw-card-title">No WiFi?<br>No Problem.</h3>
+          <p class="lyw-card-body">Your last 5 scanned explanations are always available. Even in the hostel's dead
+            zone.</p>
+
+          <!-- Cache list -->
+          <div class="lyw-cache-list">
+            <div class="lyw-cache-item lyw-ci-1">
+              <div class="lyw-ci-icon">⚡</div>
+              <div class="lyw-ci-text">
+                <div class="lyw-ci-title">Physics: Newton's Law</div>
+                <div class="lyw-ci-meta">Scanned 2 hours ago</div>
+              </div>
+              <span class="lyw-ci-badge">✅ Offline</span>
+            </div>
+            <div class="lyw-cache-item lyw-ci-2">
+              <div class="lyw-ci-icon">🧪</div>
+              <div class="lyw-ci-text">
+                <div class="lyw-ci-title">Chem: Organic Reactions</div>
+                <div class="lyw-ci-meta">Scanned 5 hours ago</div>
+              </div>
+              <span class="lyw-ci-badge">✅ Offline</span>
+            </div>
+            <div class="lyw-cache-item lyw-ci-3">
+              <div class="lyw-ci-icon">📊</div>
+              <div class="lyw-ci-text">
+                <div class="lyw-ci-title">Maths: Integration</div>
+                <div class="lyw-ci-meta">Scanned yesterday</div>
+              </div>
+              <span class="lyw-ci-badge" style="opacity:0.5;">✅ Offline</span>
+            </div>
+            <div class="lyw-cache-footer">
+              <div class="lyw-ci-dot"></div>
+              2 more saved · 5 slots total
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ EXAM KI TAIYARI ════════════════ -->
+  <section class="ekt-section">
+    <div class="ekt-inner">
+
+      <!-- Header: text left, empty right -->
+      <div class="ekt-header">
+        <div>
+          <div class="ekt-label">EXAM PREP MODE</div>
+          <h2 class="ekt-headline">Expected Questions.<br>Point-wise Answers.</h2>
+          <p class="ekt-sub">Ab textbook ke 500 pages mat ratto. StemVI scan karega aur batayega exam mein kya aayega.
+          </p>
+          <button class="ekt-cta" onclick="window.location.href='scan-explain.html'">Start My Exam Prep →</button>
+        </div>
+        <div></div>
+      </div>
+
+      <!-- Main grid: model answer + sidebar -->
+      <div class="ekt-grid">
+
+        <!-- Model Answer Card -->
+        <div class="ekt-answer-card">
+          <div class="ekt-ai-badge">
+            <span class="ekt-badge-dot"></span>
+            ✨ AI-Predicted for Semester Exams
+          </div>
+
+          <div class="ekt-question">Q1. Explain the First Law of Thermodynamics. (5 Marks)</div>
+
+          <div class="ekt-answer-title">Model Answer</div>
+          <div class="ekt-points" id="ekt-points">
+            <div class="ekt-point">
+              <span class="ekt-point-num">01</span>
+              <span class="ekt-point-text">Energy can neither be created nor destroyed — bas form change hota
+                hai.</span>
+            </div>
+            <div class="ekt-point">
+              <span class="ekt-point-num">02</span>
+              <span class="ekt-point-text">ΔU = Q − W &nbsp;(Ye equation ratt lo, full marks milenge!)</span>
+            </div>
+            <div class="ekt-point">
+              <span class="ekt-point-num">03</span>
+              <span class="ekt-point-text">Example: Jab tum bike chalate ho, fuel ki chemical energy kinetic energy mein
+                badal jati hai.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="ekt-sidebar">
+
+          <!-- Difficulty Selector -->
+          <div class="ekt-side-card ekt-diff-card">
+            <div class="ekt-side-label">DIFFICULTY MODE</div>
+            <div class="ekt-toggle">
+              <div class="ekt-tog-opt">Backlog</div>
+              <div class="ekt-tog-opt active">Passing</div>
+              <div class="ekt-tog-opt">Topper</div>
+            </div>
+            <div class="ekt-diff-qs">
+              <div class="ekt-diff-q">Define isothermal process.</div>
+              <div class="ekt-diff-q">State the 1st Law with equation.</div>
+              <div class="ekt-diff-q">Give one real-life example.</div>
+            </div>
+          </div>
+
+          <!-- Marking Scheme -->
+          <div class="ekt-side-card ekt-mark-card">
+            <div class="ekt-side-label">MARKING SCHEME TIP</div>
+            <div class="ekt-mark-icon">📝</div>
+            <p class="ekt-mark-text"><strong>Point-wise answers likho,</strong> examiner ko khush karo! Each point = 1
+              mark in most university papers.</p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ GROUP STUDY SPOTLIGHT ════════════════ -->
+  <section class="spot-section">
+    <div class="spot-inner">
+
+      <!-- LEFT: Text -->
+      <div class="spot-text">
+        <div class="spot-label">GROUP STUDY SYNC</div>
+        <h2 class="spot-headline">Your Hostel.<br>Your Study Group.<br>One AI.</h2>
+        <p class="spot-body">Generate a Room Code for any chapter. Share it with friends. When one person asks a doubt,
+          everyone sees the answer — live. Learning is better together.</p>
+
+        <ul class="spot-features">
+          <li class="spot-feat"><span class="spot-feat-arrow">→</span> Generate unique Room Code per chapter</li>
+          <li class="spot-feat"><span class="spot-feat-arrow">→</span> Up to 10 friends per room</li>
+          <li class="spot-feat"><span class="spot-feat-arrow">→</span> All doubts shared in real-time</li>
+          <li class="spot-feat"><span class="spot-feat-arrow">→</span> Room history saved for revision</li>
+          <li class="spot-feat"><span class="spot-feat-arrow">→</span> Works on Even 3G connection</li>
+        </ul>
+
+        <button class="spot-cta" onclick="window.location.href='Room_Bot_chat.html'">Start a Study Room →</button>
+      </div>
+
+      <!-- RIGHT: Room UI card -->
+      <div class="spot-card">
+        <div class="spot-card-label">Study Room</div>
+
+        <div class="spot-room-code">XX1234</div>
+
+        <div>
+          <div class="spot-avatars">
+            <div class="spot-av" style="background:#9AB17A; color:#1e2511;">A</div>
+            <div class="spot-av" style="background:#C3CC9B; color:#1e2511;">R</div>
+            <div class="spot-av" style="background:#E4DFB5; color:#1e2511;">P</div>
+            <div class="spot-av" style="background:#FBE8CE; color:#1e2511;">K</div>
+          </div>
+          <div class="spot-active">
+            <span class="spot-dot"></span>
+            4 friends active now
+          </div>
+        </div>
+
+        <div class="spot-chat">
+          <div class="chat-row">
+            <span class="chat-name">Aryan</span>
+            <div class="chat-bubble bubble-user">Osmosis ka formula kya hai?</div>
+          </div>
+          <div class="chat-row right">
+            <span class="chat-name" style="text-align:right;">AI </span>
+            <div class="chat-bubble bubble-ai">Osmosis matlab — paani ka movement high concentration se low
+              concentration ki taraf. Jaise chai mein sugar ghulti hai automatically! ☕</div>
+          </div>
+          <div class="chat-row">
+            <span class="chat-name">Priya</span>
+            <div class="chat-bubble bubble-reply">omg perfect analogy 😭</div>
+          </div>
+          <div class="chat-row">
+            <span class="chat-name">Rohit</span>
+            <div class="chat-bubble bubble-reply">exam mein yahi likhna hai?</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ════════════════ FOOTER ════════════════ -->
+  <footer class="site-footer">
+    <div class="footer-grid">
+
+      <div>
+        <div class="footer-brand-name">StemVI</div>
+        <p class="footer-tagline">Padho Smarter. Socho Deeper.</p>
+        <p class="footer-made">Built for India's students by an Indian 🇮🇳</p>
+      </div>
+
+      <div>
+        <div class="footer-col-title">Features</div>
+        <ul class="footer-links">
+          <li><a href="scan-explain.html">Scan Notes</a></li>
+          <li><a href="Doubt_Bot.html">Doubt-Bot</a></li>
+          <li><a href="Flashcards.html">Flashcards</a></li>
+          <li><a href="scan-explain.html">Exam Prep</a></li>
+          <li><a href="Room_Bot_chat.html">Group Study</a></li>
+          <li><a href="Dashboard.html">Progress Dashboard</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="footer-col-title">Resources</div>
+        <ul class="footer-links">
+          <li><a href="#">How It Works</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Links</a></li>
+          <li><a href="#">YouTube Resources</a></li>
+          <li><a href="#">Offline Guide</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="footer-col-title">Connect</div>
+        <ul class="footer-links">
+          <li><a href="#">About Us</a></li>
+          <li><a href="#">Contact</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms</a></li>
+        </ul>
+      </div>
+
+    </div>
+    <div class="footer-bar">
+      <span class="footer-bar-text">© 2026 StemVI. A learning laboratory.</span>
+      <span class="footer-bar-text">Made with ❤️ By Deepsikha</span>
+    </div>
+  </footer>
+
+  <script>
+    // ── STATIC PARTICLE CANVAS ──────────────────────────────
+    (function () {
+      const canvas = document.getElementById('particles');
+      const ctx = canvas.getContext('2d');
+
+      function draw() {
+        const W = canvas.width = window.innerWidth;
+        const H = canvas.height = document.querySelector('.hero').offsetHeight;
+        ctx.clearRect(0, 0, W, H);
+        const count = Math.floor((W * H) / 10000);
+        for (let i = 0; i < count; i++) {
+          const x = Math.random() * W;
+          const y = Math.random() * H;
+          const r = Math.random() * 1.5 + 0.3;
+          const a = Math.random() * 0.55 + 0.08;
+          ctx.globalAlpha = a;
+          ctx.fillStyle = '#9AB17A';
+          ctx.beginPath();
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      draw();
+      window.addEventListener('resize', draw);
+    })();
+
+    // ── SCROLL MOTION BLUR ──────────────────────────────────
+    (function () {
+      let timer;
+      window.addEventListener('scroll', function () {
+        document.body.classList.add('is-scrolling');
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+          document.body.classList.remove('is-scrolling');
+        }, 90);
+      }, { passive: true });
+    })();
+
+    // ── SCROLL REVEAL ───────────────────────────────────────
+    (function () {
+      const targets = document.querySelectorAll(
+        '.bento-section, .hiw-section, .bc, .hiw-card, .bento-header, .hiw-header'
+      );
+      const io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) {
+            e.target.classList.add('in-view');
+            io.unobserve(e.target);
+          }
+        });
+      }, { threshold: 0.08, rootMargin: '0px 0px -32px 0px' });
+
+      targets.forEach(function (el, i) {
+        el.classList.add('reveal-section');
+        if (el.classList.contains('bc') || el.classList.contains('hiw-card')) {
+          el.style.transitionDelay = (i % 5) * 0.08 + 's';
+        }
+        io.observe(el);
+      });
+    })();
+
+    // ── STUDY COMMAND CENTER — Bar chart + gauge animation ───
+    (function () {
+      const bars = document.querySelectorAll('.scc-bar-fill');
+      const gaugeArc = document.getElementById('scc-gauge-arc');
+      const circumference = 301.6;
+      const gaugeTarget = 0.82; // 82%
+
+      function animateBars() {
+        bars.forEach(function (bar) {
+          const target = bar.getAttribute('data-width') || '0';
+          bar.style.width = target + '%';
+        });
+        if (gaugeArc) {
+          const offset = circumference * (1 - gaugeTarget);
+          gaugeArc.style.transition = 'stroke-dashoffset 1.4s cubic-bezier(0.22,1,0.36,1)';
+          gaugeArc.style.strokeDashoffset = offset;
+        }
+      }
+
+      const section = document.querySelector('.scc-section');
+      if (section && 'IntersectionObserver' in window) {
+        const io2 = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (e.isIntersecting) { animateBars(); io2.unobserve(e.target); }
+          });
+        }, { threshold: 0.15 });
+        io2.observe(section);
+      } else {
+        animateBars();
+      }
+    })();
+
+    // ── EXAM KI TAIYARI — Point slide-in + difficulty toggle ─
+    (function () {
+      // Spring-bounce for answer points on scroll
+      const ektSection = document.querySelector('.ekt-section');
+      const ektPoints = document.querySelectorAll('.ekt-point');
+      if (ektSection && ektPoints.length && 'IntersectionObserver' in window) {
+        const io3 = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (e.isIntersecting) {
+              ektPoints.forEach(function (p) { p.classList.add('visible'); });
+              io3.unobserve(e.target);
+            }
+          });
+        }, { threshold: 0.25 });
+        io3.observe(ektSection);
+      }
+
+      // Difficulty toggle click
+      const opts = document.querySelectorAll('.ekt-tog-opt');
+      const diffQs = [
+        ['What is thermodynamics?', 'Define internal energy.', 'State 1st Law simply.'],
+        ['Define isothermal process.', 'State the 1st Law with equation.', 'Give one real-life example.'],
+        ['Derive ΔU = Q - W from first principles.', 'Compare isothermal vs adiabatic.', 'Prove energy conservation for cyclic process.']
+      ];
+      const diffList = document.querySelector('.ekt-diff-qs');
+      opts.forEach(function (opt, idx) {
+        opt.addEventListener('click', function () {
+          opts.forEach(function (o) { o.classList.remove('active'); });
+          opt.classList.add('active');
+          if (diffList) {
+            diffList.innerHTML = diffQs[idx].map(function (q) {
+              return '<div class="ekt-diff-q">' + q + '</div>';
+            }).join('');
+          }
+        });
+      });
+    })();
+
+    // ── RETRACTABLE SMART NAV BAR ───
+    (function () {
+      const navElement = document.querySelector('nav');
+      if (!navElement) return;
+
+      let lastScrollY = window.scrollY;
+      const scrollThreshold = 100; // minimum scroll to start hiding
+
+      window.addEventListener('scroll', () => {
+        const currentScrollY = window.scrollY;
+
+        // Hide only if we passed the threshold and are scrolling DOWN
+        if (currentScrollY > scrollThreshold && currentScrollY > lastScrollY) {
+          navElement.classList.add('nav-hidden');
+        }
+        // Show if scrolling UP or we are near the very top
+        else if (currentScrollY < lastScrollY || currentScrollY <= scrollThreshold) {
+          navElement.classList.remove('nav-hidden');
+        }
+
+        lastScrollY = currentScrollY;
+      }, { passive: true });
+    })();
+  </script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBrep0S6P0oAzMQ-bE8h7GHTi5wn_QNrVg",
+      authDomain: "stemvi-afbac.firebaseapp.com",
+      projectId: "stemvi-afbac",
+      storageBucket: "stemvi-afbac.firebasestorage.app",
+      messagingSenderId: "548343962225",
+      appId: "1:548343962225:web:5e5624839645924b1e19d0"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    onAuthStateChanged(auth, (user) => {
+      const ctaBtn = document.querySelector('.nav-cta');
+      if (user) {
+        ctaBtn.textContent = 'Dashboard →';
+        ctaBtn.onclick = () => window.location.href = 'Dashboard.html';
+      } else {
+        ctaBtn.textContent = 'Get Started →';
+        ctaBtn.onclick = () => window.location.href = 'Authentication.html';
+      }
+    });
+
+    // ... Existing animations (wrapped or moved here if needed)
+  </script>
+</body>
+
+</html>

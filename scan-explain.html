@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>StemVI | Scan &amp; Explain</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Playfair+Display:ital,wght@1,700;1,900&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#9AB17A",
+              "on-primary": "#1e2511",
+              secondary: "#C3CC9B",
+              "on-secondary": "#1e2511",
+              dark: "#1e2511",
+              "dark-2": "#232b14",
+              "dark-3": "#191f0e",
+              "dark-4": "#0f1509",
+              surface: "#1e2511",
+              "on-surface": "#FBE8CE",
+              "on-surface-variant": "rgba(251, 232, 206, 0.7)",
+              outline: "rgba(154, 177, 122, 0.2)",
+            },
+            fontFamily: {
+              headline: ["Plus Jakarta Sans", "sans-serif"],
+              body: ["Plus Jakarta Sans", "sans-serif"],
+            },
+            borderRadius: { DEFAULT: "1rem", lg: "2rem", xl: "3rem", full: "9999px" },
+            keyframes: {
+              'fade-up': {
+                '0%': { opacity: '0', transform: 'translateY(30px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              }
+            },
+            animation: {
+              'fade-up': 'fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            }
+          },
+        },
+      }
+    </script>
+<style>
+    :root {
+      --dark: #1e2511;
+      --dark-2: #232b14;
+      --dark-3: #191f0e;
+      --dark-4: #0f1509;
+      --sage: #9AB17A;
+      --sage-light: #C3CC9B;
+      --cream: #FBE8CE;
+      --glass: rgba(35, 43, 20, 0.6);
+      --glass-border: 1px solid rgba(195, 204, 155, 0.1);
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .glass-panel {
+      background: var(--glass);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: var(--glass-border);
+    }
+    .stagger-1 { animation-delay: 0.1s; }
+    .stagger-2 { animation-delay: 0.25s; }
+    </style>
+</head>
+<body class="bg-dark-4 font-body text-on-surface min-h-screen overflow-x-hidden">
+    <!-- TopNavBar -->
+    <header class="fixed top-0 left-0 w-full z-50 bg-[#1e2511]/60 backdrop-blur-3xl border-b border-white/10">
+        <nav class="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto w-full">
+            <div class="flex items-center gap-4">
+                <span class="text-xl font-black text-primary font-headline tracking-tighter cursor-pointer" onclick="window.location.href='index.html'">StemVI</span>
+            </div>
+            <div class="hidden lg:flex gap-8 items-center">
+                <a class="text-primary font-bold border-b-2 border-primary pb-1 transition-all text-sm" href="scan-explain.html">Scan</a>
+                <a class="text-on-surface/60 font-medium hover:text-primary hover:scale-95 transition-all text-sm" href="Doubt_Bot.html">Doubt-Bot</a>
+                <a class="text-on-surface/60 font-medium hover:text-primary hover:scale-95 transition-all text-sm" href="Flashcards.html">Flashcards</a>
+                <a class="text-on-surface/60 font-medium hover:text-primary hover:scale-95 transition-all text-sm" href="Room_Bot_chat.html">Room-Bot</a>
+                <a class="text-on-surface/60 font-medium hover:text-primary hover:scale-95 transition-all text-sm" href="Dashboard.html">Dashboard</a>
+            </div>
+            <div class="flex items-center gap-4">
+                <button id="sign-out-btn" class="material-symbols-outlined text-primary p-2 hover:bg-white/10 rounded-full transition-all active:scale-90" title="Sign Out">logout</button>
+                <button class="bg-primary text-dark px-6 py-2.5 rounded-xl font-headline font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all">
+                    Profile
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- SideNavBar -->
+    <aside class="hidden lg:flex fixed left-0 top-0 h-screen w-72 flex flex-col p-6 z-40 bg-dark-2/80 backdrop-blur-2xl border-r border-white/5">
+        <div class="mt-20 mb-10 px-4">
+            <h2 class="text-primary font-black text-3xl font-headline tracking-tighter">StemVI</h2>
+            <p class="text-on-surface-variant text-xs mt-1 uppercase tracking-widest font-bold">Laboratory Space</p>
+        </div>
+        <div class="flex flex-col gap-2">
+            <a class="flex items-center gap-4 text-on-surface-variant px-6 py-4 hover:bg-white/5 rounded-xl transition-all duration-300 ease-in-out font-semibold hover:translate-x-2" href="Dashboard.html">
+                <span class="material-symbols-outlined">dashboard</span>
+                <span>Dashboard</span>
+            </a>
+            <a class="flex items-center gap-4 bg-primary text-dark rounded-xl mx-2 px-6 py-4 transition-all duration-300 ease-in-out font-bold shadow-lg shadow-primary/10" href="scan-explain.html">
+                <span class="material-symbols-outlined">qr_code_scanner</span>
+                <span>Scan</span>
+            </a>
+            <a class="flex items-center gap-4 text-on-surface-variant px-6 py-4 hover:bg-white/5 rounded-xl transition-all duration-300 ease-in-out font-semibold hover:translate-x-2" href="Doubt_Bot.html">
+                <span class="material-symbols-outlined">smart_toy</span>
+                <span>Doubt-Bot</span>
+            </a>
+            <a class="flex items-center gap-4 text-on-surface-variant px-6 py-4 hover:bg-white/5 rounded-xl transition-all duration-300 ease-in-out font-semibold hover:translate-x-2" href="Flashcards.html">
+                <span class="material-symbols-outlined">style</span>
+                <span>Flashcards</span>
+            </a>
+            <a class="flex items-center gap-4 text-on-surface-variant px-6 py-4 hover:bg-white/5 rounded-xl transition-all duration-300 ease-in-out font-semibold hover:translate-x-2" href="Room_Bot_chat.html">
+                <span class="material-symbols-outlined">groups</span>
+                <span>Room Bot</span>
+            </a>
+        </div>
+        <div class="mt-auto p-4 bg-white/5 rounded-2xl border border-white/5 flex flex-col gap-4">
+            <div class="flex items-center gap-3 px-2">
+                <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-dark font-black tracking-tighter shadow-lg shadow-primary/20 shrink-0" id="user-avatar-initial">
+                    ?
+                </div>
+                <div class="overflow-hidden">
+                    <p class="text-sm font-bold text-on-surface truncate" id="user-name-display">Loading...</p>
+                    <p class="text-[10px] text-on-surface-variant truncate font-medium" id="user-email-display">...</p>
+                </div>
+            </div>
+            <button id="sidebar-logout-btn" class="w-full py-2 bg-white/5 hover:bg-red-500/10 border border-white/5 hover:border-red-500/20 rounded-xl text-on-surface-variant hover:text-red-500 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-sm">logout</span>
+                Logout
+            </button>
+        </div>
+    </aside>
+<main class="pt-32 lg:pl-80 pb-20 px-6 min-h-screen bg-dark-4">
+<!-- Main Layout Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+<!-- Left Panel: Upload Zone -->
+<section class="opacity-0 animate-fade-up stagger-1 glass-panel rounded-2xl p-10 lg:p-14 flex flex-col items-center justify-center min-h-[600px] border border-white/5 relative overflow-hidden group">
+<div class="absolute -left-20 -bottom-20 w-80 h-80 bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
+<div class="w-full h-full flex flex-col items-center gap-12 relative z-10">
+<div class="text-center">
+<h1 class="text-4xl lg:text-5xl font-headline font-black text-on-surface tracking-tighter mb-4 uppercase">Scan &amp; Learn</h1>
+<p class="text-on-surface-variant font-medium text-lg leading-relaxed">Turn your handwritten notes into Hinglish AI explanations.</p>
+</div>
+<!-- Upload Area -->
+<div class="w-full flex-grow border-2 border-dashed border-primary/30 rounded-2xl flex flex-col items-center justify-center p-10 bg-white/5 group/upload cursor-pointer hover:bg-white/10 hover:border-primary/60 transition-all duration-500" id="upload-zone">
+<div class="bg-primary/10 p-8 rounded-full mb-8 group-hover/upload:scale-110 group-hover/upload:bg-primary/20 transition-all duration-500 shadow-2xl">
+<span class="material-symbols-outlined text-primary text-7xl" style="font-variation-settings: 'FILL' 1;">cloud_upload</span>
+</div>
+<p class="font-headline font-black text-2xl text-on-surface mb-3 text-center uppercase tracking-tighter">Drop your notes or tap</p>
+<p class="text-on-surface-variant/40 text-[10px] font-black uppercase tracking-widest text-center">Supports PDF, PNG, JPG (MAX 10MB)</p>
+</div>
+<!-- Camera Action -->
+<button class="w-full max-w-md bg-primary text-dark flex items-center justify-center gap-6 py-7 rounded-2xl shadow-2xl hover:brightness-110 hover:scale-[1.02] transition-all duration-500 active:scale-95 group/btn overflow-hidden relative">
+<div class="absolute inset-0 bg-white/10 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-500"></div>
+<span class="material-symbols-outlined text-dark text-4xl relative z-10 font-black">photo_camera</span>
+<span class="text-2xl font-headline font-black tracking-tighter uppercase relative z-10">Use Camera</span>
+</button>
+</div>
+</section>
+<!-- Right Panel: AI Output -->
+<section class="opacity-0 animate-fade-up stagger-2 glass-panel rounded-2xl overflow-hidden min-h-[600px] flex flex-col border border-white/5 relative group/output" id="output-panel">
+<div class="absolute inset-0 bg-white/[0.02] pointer-events-none"></div>
+<div class="p-10 lg:p-14 flex-grow relative z-10 flex flex-col" id="output-content">
+    <!-- Initial State -->
+    <div id="initial-state" class="h-full flex flex-col items-center justify-center text-center space-y-8 py-20 grayscale opacity-40 group-hover/output:grayscale-0 group-hover/output:opacity-70 transition-all duration-1000">
+        <div class="w-32 h-32 bg-primary/10 rounded-full flex items-center justify-center shadow-2xl">
+            <span class="material-symbols-outlined text-primary text-6xl">auto_awesome</span>
+        </div>
+        <div>
+            <h2 class="text-3xl font-headline font-black text-on-surface uppercase tracking-tight">Taiyaar ho?</h2>
+            <p class="text-on-surface-variant text-base mt-3 max-w-xs mx-auto">Scan karo, aur AI magically explain karega in Hinglish. ✨</p>
+        </div>
+    </div>
+
+    <!-- Loading State (Hidden by default) -->
+    <div id="loading-state" class="hidden h-full flex flex-col items-center justify-center text-center space-y-8 py-20 grayscale opacity-40">
+        <div class="w-24 h-24 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <h2 class="text-2xl font-headline font-black text-on-surface uppercase italic">Analyzing Note...</h2>
+    </div>
+
+    <!-- Result Display (Hidden by default) -->
+    <div id="result-display" class="hidden space-y-10 animate-fade-up">
+        <div class="flex items-start justify-between">
+            <div class="reveal-up">
+                <div class="flex items-center gap-3 mb-3">
+                    <span id="subject-badge" class="px-4 py-1 bg-primary/10 text-primary rounded-lg text-[10px] font-black uppercase tracking-widest border border-primary/20">Subject</span>
+                    <span id="difficulty-badge" class="px-4 py-1 bg-white/5 text-on-surface-variant rounded-lg text-[10px] font-black uppercase tracking-widest border border-white/5">Medium</span>
+                </div>
+                <h2 id="topic-heading" class="text-4xl lg:text-5xl font-headline font-black text-on-surface tracking-tighter uppercase mb-2">Topic Name</h2>
+            </div>
+            <div class="bg-primary/20 p-4 rounded-2xl border border-primary/20">
+                <span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+            </div>
+        </div>
+
+        <div class="space-y-8 reveal-up delay-1">
+            <div class="glass-panel rounded-2xl p-8 hover:bg-white/5 transition-all">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="material-symbols-outlined text-primary text-xl">translate</span>
+                    <h3 class="font-headline font-extrabold text-sm text-primary uppercase tracking-widest">Hinglish Explanation</h3>
+                </div>
+                <p id="hinglish-text" class="text-on-surface leading-relaxed text-base font-medium">...</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-primary/5 rounded-2xl p-8 border border-primary/10 relative overflow-hidden group">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="material-symbols-outlined text-primary text-xl" style="font-variation-settings: 'FILL' 1;">eco</span>
+                        <h3 class="font-headline font-extrabold text-sm text-primary uppercase tracking-widest">Local Analogy</h3>
+                    </div>
+                    <p id="analogy-text" class="text-on-surface leading-relaxed italic text-lg relative z-10">...</p>
+                    <span class="absolute -bottom-6 -right-6 material-symbols-outlined text-primary/5 text-9xl group-hover:scale-110 transition-transform duration-700">lightbulb</span>
+                </div>
+                
+                <div class="bg-white/5 rounded-2xl p-8 border border-white/5 relative overflow-hidden group">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="material-symbols-outlined text-primary text-xl">psychology</span>
+                        <h3 class="font-headline font-extrabold text-sm text-primary uppercase tracking-widest">Exam Tip</h3>
+                    </div>
+                    <p id="exam-tip" class="text-on-surface leading-relaxed text-base relative z-10 font-medium">...</p>
+                </div>
+            </div>
+
+            <div class="p-8 bg-white/2 rounded-2xl border border-white/5 border-dashed">
+                <p class="text-on-surface-variant font-black uppercase tracking-widest text-[10px] mb-6 opacity-40 italic">Key Terms Picked Up</p>
+                <div id="key-terms" class="flex flex-wrap gap-4">
+                    <!-- Pills added here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+<!-- Persistent Footer Actions (Hidden until data loads) -->
+<div class="p-10 bg-white/5 border-t border-white/5 hidden" id="output-footer">
+<div class="flex flex-wrap gap-4">
+<button class="flex-1 min-w-[160px] bg-white/5 text-primary px-6 py-5 rounded-xl font-headline font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-white/10 transition-all shadow-xl" id="gen-flash-btn">
+<span class="material-symbols-outlined text-xl">style</span>
+                        Flashcards
+                    </button>
+<button class="bg-primary text-dark px-10 py-5 rounded-xl font-headline font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:brightness-110 shadow-2xl" id="listen-btn">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">record_voice_over</span>
+                        Suno (AI Voice)
+                    </button>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full border-t border-white/5 bg-transparent mt-20">
+<div class="max-w-7xl mx-auto px-8 py-16 flex flex-col items-center gap-6">
+<div class="flex gap-10">
+<a class="text-on-surface-variant hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="#">Help Center</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="#">Privacy</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="#">Research Journal</a>
+</div>
+<p class="text-on-surface-variant/40 text-[10px] font-black uppercase tracking-[0.2em]">© 2024 StemVI Laboratory</p>
+</div>
+</footer>
+</body><script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+  import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+  import { initAuthGuard, handleSignOut } from "./js/auth-guard.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBrep0S6P0oAzMQ-bE8h7GHTi5wn_QNrVg",
+    authDomain: "stemvi-afbac.firebaseapp.com",
+    projectId: "stemvi-afbac",
+    storageBucket: "stemvi-afbac.firebasestorage.app",
+    messagingSenderId: "548343962225",
+    appId: "1:548343962225:web:5e5624839645924b1e19d0"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let currentUser = null;
+
+  initAuthGuard(auth);
+
+  const logoutBtns = ['sign-out-btn', 'sidebar-logout-btn'];
+  logoutBtns.forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.addEventListener('click', () => handleSignOut(auth));
+  });
+
+  window.initPage = async (user) => {
+    currentUser = user;
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      document.getElementById('user-name-display').textContent = userData.name || 'Student';
+      document.getElementById('user-email-display').textContent = user.email || 'authenticated user';
+      document.getElementById('user-avatar-initial').textContent = (userData.name || 'S').charAt(0).toUpperCase();
+    }
+  };
+
+  // --- OCR Processing Logic ---
+  const uploadZone = document.getElementById('upload-zone');
+  const fileInput = document.getElementById('file-input');
+
+  uploadZone.onclick = () => fileInput.click();
+
+  fileInput.onchange = (e) => {
+    const file = e.target.files[0];
+    if (file) processFile(file);
+  };
+
+  async function processFile(file) {
+    showLoadingState();
+    
+    const isPDF = file.type === 'application/pdf';
+    
+    try {
+      if (isPDF) {
+        const pdfjsLib = window['pdfjs-dist/build/pdf'];
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const pages = [];
+        
+        for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
+          const page = await pdf.getPage(i);
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const viewport = page.getViewport({ scale: 2.0 });
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          await page.render({ canvasContext: ctx, viewport }).promise;
+          pages.push({
+            pageNumber: i,
+            base64: canvas.toDataURL('image/jpeg', 0.9).split(',')[1]
+          });
+        }
+        
+        const response = await fetch('/api/ocr-pdf', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pages })
+        });
+        const result = await response.json();
+        displayResult(result);
+        
+      } else {
+        const base64 = await fileToBase64(file);
+        const response = await fetch('/api/ocr', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ base64, mimeType: file.type })
+        });
+        const result = await response.json();
+        displayResult(result);
+      }
+    } catch (err) {
+      console.error(err);
+      showError('Analysis failed: ' + err.message);
+    }
+  }
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function showLoadingState() {
+    document.getElementById('initial-state').classList.add('hidden');
+    document.getElementById('result-display').classList.add('hidden');
+    document.getElementById('loading-state').classList.remove('hidden');
+    document.getElementById('output-footer').classList.add('hidden');
+  }
+
+  function showError(msg) {
+    document.getElementById('loading-state').classList.add('hidden');
+    document.getElementById('initial-state').classList.remove('hidden');
+    alert(msg);
+  }
+
+  function displayResult(result) {
+    if (!result.success) {
+      showError('OCR failed: ' + result.error);
+      return;
+    }
+    
+    const e = result.explanation;
+    document.getElementById('loading-state').classList.add('hidden');
+    document.getElementById('result-display').classList.remove('hidden');
+    document.getElementById('output-footer').classList.remove('hidden');
+
+    document.getElementById('topic-heading').textContent = e.topic;
+    document.getElementById('subject-badge').textContent = e.subject;
+    document.getElementById('hinglish-text').textContent = e.hinglishExplanation;
+    document.getElementById('analogy-text').textContent = e.analogy;
+    document.getElementById('exam-tip').textContent = e.examTip;
+    document.getElementById('difficulty-badge').textContent = e.difficulty;
+    
+    const termsContainer = document.getElementById('key-terms');
+    termsContainer.innerHTML = e.keyTerms.map(t => 
+      `<span class="px-6 py-3 bg-white/5 rounded-xl text-xs font-bold border border-white/5">${t}</span>`
+    ).join('');
+
+    saveToHistory(e);
+  }
+
+  async function saveToHistory(data) {
+    if (!currentUser) return;
+    await addDoc(collection(db, `scans/${currentUser.uid}/history`), {
+      ...data,
+      scannedAt: serverTimestamp()
+    });
+  }
+
+  // SUNO (Voice) Action
+  document.getElementById('listen-btn').onclick = () => {
+    const text = document.getElementById('hinglish-text').textContent;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'hi-IN';
+    window.speechSynthesis.speak(utterance);
+  };
+
+</script>

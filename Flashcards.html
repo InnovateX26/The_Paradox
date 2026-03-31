@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>StemVI | Flashcards AI</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Playfair+Display:ital,wght@1,700;1,900&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#9AB17A",
+                        "on-primary": "#1e2511",
+                        secondary: "#C3CC9B",
+                        "on-secondary": "#1e2511",
+                        dark: "#1e2511",
+                        "dark-2": "#232b14",
+                        "dark-3": "#191f0e",
+                        "dark-4": "#0f1509",
+                        surface: "#1e2511",
+                        "on-surface": "#FBE8CE",
+                        "on-surface-variant": "rgba(251, 232, 206, 0.7)",
+                        outline: "rgba(154, 177, 122, 0.2)",
+                    },
+                    fontFamily: {
+                        headline: ["Plus Jakarta Sans", "sans-serif"],
+                        body: ["Plus Jakarta Sans", "sans-serif"],
+                    },
+                    borderRadius: { DEFAULT: "1rem", lg: "2rem", xl: "3rem", full: "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        :root {
+            --dark: #1e2511;
+            --dark-2: #232b14;
+            --dark-3: #191f0e;
+            --dark-4: #0f1509;
+            --sage: #9AB17A;
+            --sage-light: #C3CC9B;
+            --cream: #FBE8CE;
+            --glass: rgba(35, 43, 20, 0.6);
+            --glass-border: 1px solid rgba(195, 204, 155, 0.1);
+        }
+        .flashcard-container {
+            perspective: 2000px;
+        }
+        .flashcard {
+            width: 100%;
+            height: 450px;
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+        .flashcard.flipped {
+            transform: rotateY(180deg);
+        }
+        .flashcard-front, .flashcard-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3.5rem;
+            text-align: center;
+            border-radius: 2.5rem;
+            border: var(--glass-border);
+        }
+        .flashcard-front {
+            background: var(--glass);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+        .flashcard-back {
+            transform: rotateY(180deg);
+            background: var(--sage);
+            color: var(--dark);
+        }
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: var(--glass-border);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface">
+    <!-- TopNavBar -->
+    <header class="fixed top-0 left-0 w-full z-50 bg-[#1e2511]/60 backdrop-blur-3xl border-b border-white/10">
+        <nav class="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
+            <div class="flex items-center gap-4">
+                <span class="text-xl font-black text-primary font-headline tracking-tighter cursor-pointer" onclick="window.location.href='index.html'">StemVI</span>
+            </div>
+            <div class="hidden lg:flex gap-8 items-center">
+                <a class="text-on-surface/60 font-medium hover:text-primary transition-all text-sm" href="scan-explain.html">Scan</a>
+                <a class="text-on-surface/60 font-medium hover:text-primary transition-all text-sm" href="Doubt_Bot.html">Doubt-Bot</a>
+                <a class="text-primary font-bold border-b-2 border-primary transition-all text-sm" href="Flashcards.html">Flashcards</a>
+                <a class="text-on-surface/60 font-medium hover:text-primary transition-all text-sm" href="Dashboard.html">Dashboard</a>
+            </div>
+            <div class="flex items-center gap-4">
+                <button id="sign-out-btn" class="material-symbols-outlined text-primary p-2 hover:bg-white/10 rounded-full transition-all active:scale-90" title="Sign Out">logout</button>
+                <button class="bg-primary text-dark px-5 py-2 rounded-xl font-headline font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all">
+                    Profile
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- SideNavBar -->
+    <aside class="hidden lg:flex fixed left-0 top-0 h-screen w-72 flex flex-col p-6 z-40 bg-dark-2/80 backdrop-blur-2xl border-r border-white/5">
+        <div class="mt-20 mb-10 px-4">
+            <h2 class="text-primary font-black text-3xl font-headline tracking-tighter">StemVI</h2>
+            <p class="text-on-surface-variant text-xs mt-1 uppercase tracking-widest font-bold">Laboratory Space</p>
+        </div>
+        <div class="flex flex-col gap-2">
+            <a class="flex items-center gap-4 text-on-surface-variant px-6 py-4 hover:bg-white/5 rounded-xl transition-all duration-300 ease-in-out font-semibold hover:translate-x-2" href="Dashboard.html">
+                <span class="material-symbols-outlined">dashboard</span>
+                <span>Dashboard</span>
+            </a>
+            <a class="flex items-center gap-4 text-on-surface-variant px-6 py-4 hover:bg-white/5 rounded-xl transition-all duration-300 ease-in-out font-semibold hover:translate-x-2" href="scan-explain.html">
+                <span class="material-symbols-outlined">qr_code_scanner</span>
+                <span>Scan</span>
+            </a>
+            <a class="flex items-center gap-4 text-on-surface-variant px-6 py-4 hover:bg-white/5 rounded-xl transition-all duration-300 ease-in-out font-semibold hover:translate-x-2" href="Doubt_Bot.html">
+                <span class="material-symbols-outlined">smart_toy</span>
+                <span>Doubt-Bot</span>
+            </a>
+            <a class="flex items-center gap-4 bg-primary text-dark rounded-xl mx-2 px-6 py-4 transition-all duration-300 ease-in-out font-bold shadow-lg shadow-primary/10" href="Flashcards.html">
+                <span class="material-symbols-outlined transition-transform group-hover:scale-110">style</span>
+                <span>Flashcards</span>
+            </a>
+            <a class="flex items-center gap-4 text-on-surface-variant px-6 py-4 hover:bg-white/5 rounded-xl transition-all duration-300 ease-in-out font-semibold hover:translate-x-2" href="Room_Bot_chat.html">
+                <span class="material-symbols-outlined transition-transform group-hover:scale-110">group</span>
+                <span>Room Bot</span>
+            </a>
+        </div>
+        <div class="mt-auto p-4 bg-white/5 rounded-2xl border border-white/5 flex flex-col gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-dark font-black tracking-tighter shadow-lg shadow-primary/20 shrink-0" id="user-avatar-initial">
+                    ?
+                </div>
+                <div class="overflow-hidden">
+                    <p class="text-sm font-bold text-on-surface truncate" id="user-name-display">Loading...</p>
+                    <p class="text-[10px] text-on-surface-variant truncate font-medium" id="user-email-display">...</p>
+                </div>
+            </div>
+            <button id="sidebar-logout-btn" class="w-full py-2 bg-white/5 hover:bg-red-500/10 border border-white/5 hover:border-red-500/20 rounded-xl text-on-surface-variant hover:text-red-500 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-sm">logout</span>
+                Logout
+            </button>
+        </div>
+    </aside>
+
+    <main class="pt-40 lg:pl-80 pb-20 px-6 min-h-screen bg-dark-4">
+        <div class="space-y-16">
+            <header class="text-center">
+                <h1 class="text-5xl font-black font-headline text-on-surface mb-4 uppercase tracking-tighter">Deep Recall</h1>
+                <p class="text-on-surface-variant font-black uppercase tracking-widest text-[10px] opacity-40 italic">Hand-crafted AI flashcards for long-term retention.</p>
+            </header>
+
+            <!-- Card View Area -->
+            <div class="flashcard-container" id="card-area">
+                <div class="flashcard" id="main-card">
+                    <div class="flashcard-front">
+                        <div class="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-10" id="card-subject">Physics</div>
+                        <h2 class="text-3xl font-black leading-tight text-on-surface uppercase tracking-tight" id="card-question"></h2>
+                        <p class="mt-12 text-[10px] text-primary/40 font-black uppercase tracking-widest animate-pulse">Tap to reveal answer</p>
+                    </div>
+                    <div class="flashcard-back">
+                        <h3 class="text-[10px] font-black mb-6 uppercase tracking-widest opacity-60">AI Solution</h3>
+                        <p class="text-xl font-black leading-relaxed" id="card-answer">Fetching data...</p>
+                        <div class="mt-12 flex gap-4">
+                            <button class="bg-dark text-primary px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all">Got it! ✅</button>
+                            <button class="bg-transparent border-2 border-dark/20 text-dark px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-dark/5 transition-all">Need review 🔁</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex justify-center items-center gap-12">
+                <button class="w-14 h-14 rounded-xl bg-white/5 border border-white/10 text-primary flex items-center justify-center shadow-xl hover:bg-white/10 active:scale-95 transition-all" id="prev-btn">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </button>
+                <div class="text-[10px] font-black text-primary uppercase tracking-[0.2em]" id="card-progress">0 / 0</div>
+                <button class="w-14 h-14 rounded-xl bg-primary text-dark flex items-center justify-center shadow-2xl hover:brightness-110 active:scale-95 transition-all" id="next-btn">
+                    <span class="material-symbols-outlined font-black">arrow_forward</span>
+                </button>
+            </div>
+
+            <!-- Generate Area -->
+            <div class="glass-panel p-10 rounded-2xl border border-white/5 mt-20 relative overflow-hidden group">
+                <div class="absolute -right-20 -top-20 w-60 h-60 bg-primary/5 rounded-full blur-[80px]"></div>
+                <h3 class="text-xl font-black font-headline text-on-surface mb-6 uppercase tracking-tight relative z-10">Expand Your Deck</h3>
+                <div class="flex gap-4 relative z-10">
+                    <input type="text" id="topic-input" class="flex-1 bg-white/5 border border-white/10 rounded-xl px-6 py-5 focus:ring-primary focus:border-primary font-medium text-on-surface placeholder:text-on-surface-variant/20" placeholder="Enter topic (e.g. Thermodynamics)" />
+                    <button id="gen-btn" class="bg-primary text-dark px-10 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-2xl hover:brightness-110 transition-all flex items-center gap-3">
+                        <span class="material-symbols-outlined text-sm font-black">auto_awesome</span>
+                        Build
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="w-full border-t border-white/5 bg-transparent mt-32">
+            <div class="max-w-7xl mx-auto px-8 py-16 flex flex-col items-center gap-6">
+                <div class="flex gap-10">
+                    <a class="text-on-surface-variant hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="#">Help Center</a>
+                    <a class="text-on-surface-variant hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="#">Privacy</a>
+                    <a class="text-on-surface-variant hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="#">Research Journal</a>
+                </div>
+                <p class="text-on-surface-variant/40 text-[10px] font-black uppercase tracking-[0.2em]">© 2024 StemVI Laboratory</p>
+            </div>
+        </footer>
+    </main>
+ain>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+        import { initAuthGuard, handleSignOut } from "./js/auth-guard.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrep0S6P0oAzMQ-bE8h7GHTi5wn_QNrVg",
+            authDomain: "stemvi-afbac.firebaseapp.com",
+            projectId: "stemvi-afbac",
+            storageBucket: "stemvi-afbac.firebasestorage.app",
+            messagingSenderId: "548343962225",
+            appId: "1:548343962225:web:5e5624839645924b1e19d0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let flashcards = [];
+        let currentIndex = 0;
+
+        initAuthGuard(auth);
+
+        const logoutBtns = ['sign-out-btn', 'sidebar-logout-btn'];
+        logoutBtns.forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) btn.addEventListener('click', () => handleSignOut(auth));
+        });
+
+        window.initPage = async (user) => {
+            currentUser = user;
+            loadFlashcards();
+            
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                document.getElementById('user-name-display').textContent = userData.name || 'Student';
+                document.getElementById('user-email-display').textContent = user.email || 'authenticated user';
+                document.getElementById('user-avatar-initial').textContent = (userData.name || 'S').charAt(0).toUpperCase();
+            }
+        };
+
+        async function loadFlashcards() {
+            const q = query(collection(db, `flashcards/${currentUser.uid}/cards`), orderBy("createdAt", "desc"));
+            const querySnapshot = await getDocs(q);
+            flashcards = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+            if (flashcards.length > 0) {
+                document.getElementById('card-area').classList.remove('hidden');
+                const emptyState = document.getElementById('empty-state');
+                if (emptyState) emptyState.remove();
+                renderCard();
+            } else {
+                document.getElementById('card-area').classList.add('hidden');
+                let emptyState = document.getElementById('empty-state');
+                if (!emptyState) {
+                    emptyState = document.createElement('div');
+                    emptyState.id = 'empty-state';
+                    emptyState.className = 'glass-panel p-16 rounded-3xl flex flex-col items-center text-center space-y-8 animate-fade-up border border-white/5';
+                    emptyState.innerHTML = `
+                        <div class="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center shadow-2xl">
+                            <span class="material-symbols-outlined text-primary text-5xl">auto_awesome</span>
+                        </div>
+                        <div>
+                            <h2 class="text-3xl font-headline font-black text-on-surface uppercase tracking-tight mb-3">Koi cards nahi hain!</h2>
+                            <p class="text-on-surface-variant text-base max-w-xs font-medium">Topic scan karo, AI automatically flashcards bana dega. ✨</p>
+                        </div>
+                        <button onclick="window.location.href='scan-explain.html'" class="bg-primary text-dark px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-xs shadow-2xl hover:brightness-110 active:scale-95 transition-all">
+                            Scan Karo Notes 📸
+                        </button>
+                    `;
+                    document.getElementById('card-area').parentElement.appendChild(emptyState);
+                }
+            }
+        }
+
+        function renderCard() {
+            const card = flashcards[currentIndex];
+            document.getElementById('card-question').textContent = card.question;
+            document.getElementById('card-answer').textContent = card.answer;
+            document.getElementById('card-subject').textContent = card.subject || 'STEM';
+            document.getElementById('card-progress').textContent = `${currentIndex + 1} / ${flashcards.length}`;
+            document.getElementById('main-card').classList.remove('flipped');
+        }
+
+        document.getElementById('main-card').onclick = () => {
+            document.getElementById('main-card').classList.toggle('flipped');
+        };
+
+        document.getElementById('next-btn').onclick = () => {
+            if (currentIndex < flashcards.length - 1) {
+                currentIndex++;
+                renderCard();
+            }
+        };
+
+        document.getElementById('prev-btn').onclick = () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                renderCard();
+            }
+        };
+
+        // --- AI Generation Logic ---
+        document.getElementById('gen-btn').onclick = async () => {
+            const topic = document.getElementById('topic-input').value.trim();
+            if (!topic) return;
+            
+            const btn = document.getElementById('gen-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span><span>Creating...</span>';
+            btn.disabled = true;
+
+            const systemPrompt = `Create 5 flashcards for the topic in Hinglish. Return ONLY a JSON array of objects: [{"question": "...", "answer": "...", "subject": "..."}]`;
+            
+            try {
+                const response = await fetch("/api/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        model: "anthropic/claude-3.5-sonnet",
+                        messages: [{ role: "system", content: systemPrompt }, { role: "user", content: `Topic: ${topic}` }]
+                    })
+                });
+                const data = await response.json();
+                const cards = JSON.parse(data.choices[0].message.content);
+                
+                for (const c of cards) {
+                    await addDoc(collection(db, `flashcards/${currentUser.uid}/cards`), { 
+                        ...c, 
+                        createdAt: serverTimestamp() 
+                    });
+                }
+                
+                document.getElementById('topic-input').value = '';
+                loadFlashcards();
+            } catch (err) {
+                console.error(err);
+                alert("Generation failed.");
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        };
+
+    </script>
+</body>
+</html>

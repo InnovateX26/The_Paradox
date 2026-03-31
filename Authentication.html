@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>StemVI | Authentication</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Playfair+Display:ital,wght@1,700;1,900&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0&display=swap"
+        rel="stylesheet" />
+
+    <!-- Firebase (Modular CDN will be imported in script tag) -->
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#9AB17A",
+                        "on-primary": "#1e2511",
+                        secondary: "#C3CC9B",
+                        "on-secondary": "#1e2511",
+                        dark: "#1e2511",
+                        "dark-2": "#232b14",
+                        "dark-3": "#191f0e",
+                        "dark-4": "#0f1509",
+                        surface: "#1e2511",
+                        "on-surface": "#FBE8CE",
+                        "on-surface-variant": "rgba(251, 232, 206, 0.7)",
+                        outline: "rgba(154, 177, 122, 0.2)",
+                    },
+                    fontFamily: {
+                        headline: ["Plus Jakarta Sans", "sans-serif"],
+                        body: ["Plus Jakarta Sans", "sans-serif"],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --dark: #1e2511;
+            --dark-2: #232b14;
+            --dark-3: #191f0e;
+            --dark-4: #0f1509;
+            --sage: #9AB17A;
+            --sage-light: #C3CC9B;
+            --cream: #FBE8CE;
+            --glass: rgba(35, 43, 20, 0.6);
+            --glass-border: 1px solid rgba(195, 204, 155, 0.1);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+            vertical-align: middle;
+        }
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: var(--glass-border);
+        }
+        .clay-card {
+            background: var(--sage);
+            box-shadow: inset -4px -4px 8px rgba(0, 0, 0, 0.1), inset 4px 4px 8px rgba(255, 255, 255, 0.4);
+        }
+        .clay-input {
+            background: rgba(255, 255, 255, 0.07) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--cream) !important;
+        }
+        .clay-input::placeholder {
+            color: rgba(251, 232, 206, 0.4) !important;
+        }
+        .clay-input:focus {
+            outline: none;
+            border-color: var(--sage);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 4px rgba(154, 177, 122, 0.2);
+        }
+        .tab-active {
+            background: var(--sage);
+            color: var(--dark);
+        }
+        .tab-inactive {
+            background: transparent;
+            color: rgba(251, 232, 206, 0.5);
+        }
+
+        /* Animations */
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .float-anim {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            to {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-enter {
+            animation: fadeUp 0.35s ease forwards;
+        }
+
+        /* Page loader */
+        #page-loader {
+            position: fixed;
+            inset: 0;
+            background: #1e2511;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        #page-loader.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        /* Shake on error */
+        .shake {
+            animation: shake 0.4s ease;
+        }
+
+        /* Strength bar */
+        .strength-bar {
+            height: 4px;
+            border-radius: 99px;
+            transition: all 0.3s ease;
+            background: rgba(30, 37, 17, 0.1);
+        }
+
+        .strength-bar.weak {
+            background: #f87171;
+            width: 25%;
+        }
+
+        .strength-bar.fair {
+            background: #fb923c;
+            width: 50%;
+        }
+
+        .strength-bar.good {
+            background: #facc15;
+            width: 75%;
+        }
+
+        .strength-bar.strong {
+            background: #9AB17A;
+            width: 100%;
+        }
+
+        /* Toast */
+        .toast {
+            min-width: 280px;
+            background: #1e2511;
+            color: #FBE8CE;
+            padding: 14px 18px;
+            border-radius: 16px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .toast.hiding {
+            animation: slideOut 0.3s ease forwards;
+        }
+
+        .toast.success {
+            border-left: 4px solid #9AB17A;
+        }
+
+        .toast.error {
+            border-left: 4px solid #f87171;
+        }
+
+        .toast.info {
+            border-left: 4px solid #C3CC9B;
+        }
+
+        /* Forgot UI */
+        #forgot-ui {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            animation: fadeUp 0.3s ease;
+        }
+
+        #forgot-ui.open {
+            display: flex;
+        }
+
+        /* Scrollable right panel on short screens */
+        .right-panel {
+            overflow-y: auto;
+            max-height: 100vh;
+        }
+
+        @media (max-width: 767px) {
+            .left-panel {
+                display: none !important;
+            }
+
+            .right-panel {
+                max-height: none;
+                overflow-y: auto;
+            }
+        }
+
+        /* Left panel radial glow */
+        .left-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(154, 177, 122, 0.2) 0%, transparent 65%);
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body class="font-body text-[#1e2511] overflow-hidden">
+
+    <!-- Page Loader -->
+    <div id="page-loader">
+        <p class="font-headline text-4xl text-[#9AB17A] mb-6">StemVI</p>
+        <div class="flex gap-2">
+            <div class="w-2 h-2 bg-[#9AB17A] rounded-full animate-bounce" style="animation-delay:0s"></div>
+            <div class="w-2 h-2 bg-[#9AB17A] rounded-full animate-bounce" style="animation-delay:0.15s"></div>
+            <div class="w-2 h-2 bg-[#9AB17A] rounded-full animate-bounce" style="animation-delay:0.3s"></div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 flex flex-col gap-3 z-[9999]"></div>
+
+    <main class="flex w-full h-screen">
+
+        <!-- ═══════════════════ LEFT PANEL ═══════════════════ -->
+        <section class="left-panel relative w-1/2 bg-dark-4 flex flex-col justify-center p-16 overflow-hidden">
+            <!-- Radial glow -->
+            <div class="left-glow opacity-30"></div>
+            <!-- Noise -->
+            <div class="absolute inset-0 opacity-5 pointer-events-none"></div>
+
+            <div class="relative z-10 flex flex-col gap-10 max-w-lg">
+
+                <!-- Logo -->
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center border border-primary/20">
+                        <span class="material-symbols-outlined text-primary text-xl">school</span>
+                    </div>
+                    <span class="font-headline text-on-surface text-2xl font-black tracking-tighter uppercase">StemVI</span>
+                </div>
+
+                <!-- Hackathon Badge -->
+                <div class="flex items-center gap-2 self-start px-5 py-2 rounded-xl border border-primary/20 bg-primary/5">
+                    <span class="w-2 h-2 rounded-full bg-primary inline-block animate-pulse"></span>
+                    <span class="text-primary text-[10px] font-black uppercase tracking-widest">InnovateX Hackathon 2025</span>
+                </div>
+
+                <!-- Headline -->
+                <div>
+                    <h1 class="font-headline text-[clamp(48px,5.5vw,68px)] text-on-surface font-black leading-[0.9] tracking-tighter uppercase">
+                        Padho Smarter.
+                    </h1>
+                    <h1 class="font-headline text-[clamp(48px,5.5vw,68px)] leading-[0.9] tracking-tighter uppercase italic text-primary mt-2">
+                        Socho Deeper.
+                    </h1>
+                </div>
+
+                <!-- Clay Card — inline before the subtitle -->
+                <div class="float-anim relative glass-panel rounded-3xl p-8 overflow-hidden group">
+                    <div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <!-- Live Now badge -->
+                    <div class="absolute top-6 right-6 bg-primary text-dark text-[9px] font-black tracking-widest uppercase px-4 py-1.5 rounded-xl flex items-center gap-2 shadow-2xl">
+                        <span class="w-1.5 h-1.5 rounded-full bg-dark inline-block animate-pulse"></span>
+                        Live Session
+                    </div>
+                    <p class="text-[9px] font-black uppercase tracking-[0.2em] text-primary mb-4 opacity-60">Real-time Lab Study</p>
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center border border-primary/20">
+                            <span class="material-symbols-outlined text-primary text-2xl">eco</span>
+                        </div>
+                        <h3 class="text-on-surface font-black text-xl uppercase tracking-tight">Photosynthesis</h3>
+                    </div>
+                    <div class="bg-white/5 rounded-2xl p-5 border border-white/5">
+                        <p class="text-on-surface text-sm italic font-medium leading-relaxed opacity-80">
+                            "Podhon ka khana banana ka process — sunlight + CO₂ + water = glucose 🌿"
+                        </p>
+                    </div>
+                    <div class="flex items-center justify-between mt-6">
+                        <div class="flex gap-1 text-primary text-sm">⭐⭐⭐⭐⭐</div>
+                        <span class="text-primary text-[10px] font-black uppercase tracking-widest">Optimized for Recall ✓</span>
+                    </div>
+                </div>
+
+
+                <!-- Feature Pills -->
+                <div class="flex flex-wrap gap-4">
+                    <div class="px-6 py-3 rounded-xl border border-white/5 bg-white/5 text-primary text-xs font-black uppercase tracking-widest flex items-center gap-3 hover:bg-white/10 transition-all cursor-default">
+                        <span class="material-symbols-outlined text-sm">document_scanner</span> OCR Scanner
+                    </div>
+                    <div class="px-6 py-3 rounded-xl border border-white/5 bg-white/5 text-primary text-xs font-black uppercase tracking-widest flex items-center gap-3 hover:bg-white/10 transition-all cursor-default">
+                        <span class="material-symbols-outlined text-sm">psychology</span> Hinglish AI
+                    </div>
+                    <div class="px-6 py-3 rounded-xl border border-white/5 bg-white/5 text-primary text-xs font-black uppercase tracking-widest flex items-center gap-3 hover:bg-white/10 transition-all cursor-default">
+                        <span class="material-symbols-outlined text-sm">insights</span> Analytics
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Divider Line -->
+        <div class="w-px bg-[#9AB17A]/20 flex-shrink-0 self-stretch"></div>
+
+        <!-- ═══════════════════ RIGHT PANEL ═══════════════════ -->
+        <section class="right-panel relative w-1/2 bg-dark-2 flex flex-col items-center justify-center px-12 py-10">
+            <!-- Noise -->
+            <div class="absolute inset-0 opacity-5 pointer-events-none"></div>
+
+            <div class="relative z-10 w-full max-w-[420px]">
+
+                <!-- Toggle Tabs -->
+                <div class="inline-flex p-1.5 rounded-2xl mb-12 bg-dark-4 border border-white/5 gap-1 shadow-2xl">
+                    <button id="tab-login" onclick="switchTab('login')"
+                        class="tab-active px-10 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">Log In</button>
+                    <button id="tab-signup" onclick="switchTab('signup')"
+                        class="tab-inactive px-10 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">Sign Up</button>
+                </div>
+
+                <!-- ══ LOGIN FORM ══ -->
+                <div id="view-login" class="form-enter">
+                    <h2 class="font-headline text-[32px] text-[#1e2511] tracking-tight leading-tight mb-1">Welcome back
+                        👋</h2>
+                    <p class="text-[#1e2511]/50 text-sm font-medium mb-6">Pick up where you left off.</p>
+
+                    <form id="login-form" class="flex flex-col gap-4">
+
+                        <!-- Email -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[10px] font-black uppercase tracking-widest text-[#1e2511]/50 ml-4">Email
+                                or Phone Number</label>
+                            <div class="relative">
+                                <span
+                                    class="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-[#1e2511]/40 text-lg">alternate_email</span>
+                                <input id="login-email" type="email" placeholder="aryan@example.com" required
+                                    class="clay-input w-full pl-14 pr-5 py-4 rounded-2xl placeholder:text-cream/30 font-medium text-sm transition-all border-0" />
+                            </div>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="flex flex-col gap-1.5">
+                            <label
+                                class="text-[10px] font-black uppercase tracking-widest text-[#1e2511]/50 ml-4">Password</label>
+                            <div class="relative">
+                                <span
+                                    class="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-[#1e2511]/40 text-lg">lock</span>
+                                <input id="login-password" type="password" placeholder="Your password" required
+                                    class="clay-input w-full pl-14 pr-14 py-4 rounded-2xl placeholder:text-cream/30 font-medium text-sm transition-all border-0" />
+                                <button type="button" onclick="togglePass('login-password','eye-login')"
+                                    class="absolute right-5 top-1/2 -translate-y-1/2 text-[#1e2511]/40 hover:text-[#9AB17A] transition-colors">
+                                    <span class="material-symbols-outlined text-lg" id="eye-login">visibility</span>
+                                </button>
+                            </div>
+                            <a href="#" onclick="toggleForgot(event)"
+                                class="text-[#9AB17A] text-xs font-bold self-end hover:text-[#1e2511] transition-colors">Forgot
+                                Password?</a>
+                        </div>
+
+                        <!-- Forgot UI -->
+                        <div id="forgot-ui" class="clay-input rounded-2xl p-4 flex-col gap-3">
+                            <p class="text-[#1e2511] text-xs font-bold">Enter your email to get a reset link:</p>
+                            <div class="relative">
+                                <span
+                                    class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#1e2511]/40 text-base">alternate_email</span>
+                                <input id="reset-email" type="email" placeholder="aryan@example.com"
+                                    class="clay-input w-full pl-12 pr-4 py-3 rounded-xl placeholder:text-cream/30 text-sm border-0" />
+                            </div>
+                            <button type="button" onclick="handleForgotPassword()"
+                                class="clay-btn-dark w-full py-3 rounded-full bg-[#1e2511] text-[#FBE8CE] font-bold text-sm">Send
+                                Reset Link →</button>
+                        </div>
+
+                        <!-- Login Button -->
+                        <button type="submit" id="login-btn-el"
+                            class="w-full py-5 mt-4 rounded-xl bg-primary text-dark font-headline font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] shadow-2xl overflow-hidden relative group/btn">
+                            <div class="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform"></div>
+                            <span id="login-btn-text" class="relative z-10">Log In</span>
+                            <span id="login-btn-icon" class="material-symbols-outlined text-xl relative z-10 font-black">arrow_forward</span>
+                        </button>
+                    </form>
+
+                    <!-- Divider -->
+                    <div class="flex items-center gap-3 my-5">
+                        <div class="flex-1 h-px bg-[#1e2511]/08"></div>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-[#1e2511]/30">or continue
+                            with</span>
+                        <div class="flex-1 h-px bg-[#1e2511]/08"></div>
+                    </div>
+
+                    <!-- Social -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <button onclick="handleGoogleLogin()"
+                            class="flex items-center justify-center gap-3 py-4 rounded-xl border border-white/5 bg-white/5 text-on-surface font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all shadow-xl btn-hover-scale">
+                            <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
+                                <path fill="#4285F4"
+                                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                                <path fill="#34A853"
+                                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                                <path fill="#FBBC05"
+                                    d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.84z" />
+                                <path fill="#EA4335"
+                                    d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                            </svg>
+                            Google
+                        </button>
+                        <button onclick="handleGuestLogin()"
+                            class="flex items-center justify-center gap-3 py-4 rounded-xl border border-white/5 bg-white/5 text-on-surface font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all shadow-xl btn-hover-scale">
+                            <span class="material-symbols-outlined text-primary text-xl">person_off</span>
+                            Guest
+                        </button>
+                    </div>
+
+                    <p class="text-center text-sm text-[#1e2511]/50 font-medium mt-6">
+                        Don't have an account? <button onclick="switchTab('signup')"
+                            class="text-[#9AB17A] font-black border-b-2 border-[#9AB17A]/50">Sign Up</button>
+                    </p>
+                </div>
+
+                <!-- ══ SIGNUP FORM ══ -->
+                <div id="view-signup" class="hidden form-enter">
+                    <h2 class="font-headline text-3xl text-on-surface tracking-tighter leading-tight mb-2 uppercase font-black">Join StemVI Free 🌿</h2>
+                    <p class="text-on-surface-variant/60 text-[10px] font-black uppercase tracking-widest mb-8">Start learning smarter today.</p>
+
+                    <form id="signup-form" class="flex flex-col gap-5">
+
+                        <!-- Full Name -->
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 ml-4">Full Name</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-on-surface-variant/40 text-lg">person</span>
+                                <input id="signup-name" type="text" placeholder="Aryan Kumar" required
+                                    class="clay-input w-full pl-14 pr-5 py-4 rounded-2xl text-sm font-medium transition-all" />
+                            </div>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 ml-4">Email</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-on-surface-variant/40 text-lg">alternate_email</span>
+                                <input id="signup-email" type="email" placeholder="aryan@example.com" required
+                                    class="clay-input w-full pl-14 pr-5 py-4 rounded-2xl text-sm font-medium transition-all" />
+                            </div>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 ml-4">Password</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-on-surface-variant/40 text-lg">lock</span>
+                                <input id="signup-password" type="password" placeholder="Min. 6 characters" required
+                                    oninput="checkStrength(this.value)"
+                                    class="clay-input w-full pl-14 pr-14 py-4 rounded-2xl text-sm font-medium transition-all" />
+                                <button type="button" onclick="togglePass('signup-password','eye-signup')"
+                                    class="absolute right-5 top-1/2 -translate-y-1/2 text-on-surface-variant/40 hover:text-primary transition-colors">
+                                    <span class="material-symbols-outlined text-lg" id="eye-signup">visibility</span>
+                                </button>
+                            </div>
+                            <!-- Strength bar -->
+                            <div class="px-2">
+                                <div class="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                                    <div id="strength-bar" class="h-full rounded-full transition-all duration-500 w-0"></div>
+                                </div>
+                                <p id="strength-label" class="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/20 mt-2 ml-1"></p>
+                            </div>
+                        </div>
+
+                        <!-- College -->
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 ml-4">College / Institution</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-on-surface-variant/40 text-lg">school</span>
+                                <input id="signup-college" type="text" placeholder="NIT Patna, IIT Delhi, etc." required
+                                    class="clay-input w-full pl-14 pr-5 py-4 rounded-2xl text-sm font-medium transition-all" />
+                            </div>
+                        </div>
+
+                        <!-- Signup Button -->
+                        <button type="submit" id="signup-btn-el"
+                            class="w-full py-5 mt-4 rounded-xl bg-primary text-dark font-headline font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] shadow-2xl overflow-hidden relative group/sbtn">
+                            <div class="absolute inset-0 bg-white/20 translate-y-full group-hover/sbtn:translate-y-0 transition-transform"></div>
+                            <span id="signup-btn-text" class="relative z-10">Create Account</span>
+                            <span id="signup-btn-icon" class="material-symbols-outlined text-xl relative z-10 font-black">person_add</span>
+                        </button>
+
+                    </form>
+
+                    <p class="text-center text-[11px] text-on-surface-variant/40 mt-8 font-medium">
+                        Already have an account? <button onclick="switchTab('login')"
+                            class="text-primary font-black uppercase tracking-widest ml-1 hover:underline">Log In</button>
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, signInAnonymously, updateProfile } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrep0S6P0oAzMQ-bE8h7GHTi5wn_QNrVg",
+            authDomain: "stemvi-afbac.firebaseapp.com",
+            projectId: "stemvi-afbac",
+            storageBucket: "stemvi-afbac.firebasestorage.app",
+            messagingSenderId: "548343962225",
+            appId: "1:548343962225:web:5e5624839645924b1e19d0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // On auth change → redirect
+        onAuthStateChanged(auth, user => {
+            if (user) {
+                window.location.href = 'Dashboard.html';
+            } else {
+                document.getElementById('page-loader').classList.add('hidden');
+            }
+        });
+
+        // ── Tab Switching ─────────────────────────────────────────
+        window.switchTab = function (tab) {
+            const loginView = document.getElementById('view-login');
+            const signupView = document.getElementById('view-signup');
+            const tabLogin = document.getElementById('tab-login');
+            const tabSignup = document.getElementById('tab-signup');
+            const activeClass = 'tab-active px-10 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all';
+            const inactiveClass = 'tab-inactive px-10 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all';
+
+            if (tab === 'login') {
+                loginView.classList.remove('hidden');
+                loginView.classList.add('form-enter');
+                signupView.classList.add('hidden');
+                tabLogin.className = activeClass;
+                tabSignup.className = inactiveClass;
+            } else {
+                signupView.classList.remove('hidden');
+                signupView.classList.add('form-enter');
+                loginView.classList.add('hidden');
+                tabSignup.className = activeClass;
+                tabLogin.className = inactiveClass;
+            }
+        }
+
+        // ── Utilities ─────────────────────────────────────────────
+        window.togglePass = function (inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.textContent = 'visibility_off';
+            } else {
+                input.type = 'password';
+                icon.textContent = 'visibility';
+            }
+        }
+
+        window.toggleForgot = function (e) {
+            e.preventDefault();
+            const el = document.getElementById('forgot-ui');
+            el.classList.toggle('open');
+        }
+
+        let strengthScore = 0;
+        window.checkStrength = function (val) {
+            let score = 0;
+            if (val.length >= 6) score++;
+            if (/[A-Z]/.test(val)) score++;
+            if (/[0-9]/.test(val)) score++;
+            if (/[^A-Za-z0-9]/.test(val)) score++;
+            strengthScore = score;
+
+            const bar = document.getElementById('strength-bar');
+            const label = document.getElementById('strength-label');
+            const map = [
+                { w: '0', color: 'bg-white/5', text: 'Enter a password', textColor: 'text-on-surface-variant/20' },
+                { w: '25%', color: 'bg-red-500', text: 'Weak', textColor: 'text-red-500' },
+                { w: '50%', color: 'bg-orange-500', text: 'Fair', textColor: 'text-orange-500' },
+                { w: '75%', color: 'bg-yellow-500', text: 'Good', textColor: 'text-yellow-500' },
+                { w: '100%', color: 'bg-primary', text: 'Strong 💪', textColor: 'text-primary' },
+            ];
+            const m = map[score];
+            bar.style.width = m.w;
+            bar.className = `h-full rounded-full transition-all duration-500 ${m.color}`;
+            label.textContent = val.length === 0 ? 'Enter a password' : m.text;
+            label.className = `text-[9px] font-black uppercase tracking-widest mt-2 ml-1 ${val.length === 0 ? 'text-on-surface-variant/20' : m.textColor}`;
+        }
+
+        // ── Toast ─────────────────────────────────────────────────
+        window.showToast = function (msg, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icons = { success: '✓', error: '✕', info: 'ℹ' };
+            toast.innerHTML = `<span>${icons[type] || 'ℹ'}</span><span>${msg}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('hiding');
+                setTimeout(() => toast.remove(), 350);
+            }, 4000);
+        }
+
+        // ── Button Loading ────────────────────────────────────────
+        function setBtnLoading(btnId, textId, iconId, loading, originalText) {
+            const btn = document.getElementById(btnId);
+            const text = document.getElementById(textId);
+            const icon = document.getElementById(iconId);
+            btn.disabled = loading;
+            if (loading) {
+                text.textContent = 'Loading...';
+                if (icon) icon.style.display = 'none';
+            } else {
+                text.textContent = originalText;
+                if (icon) icon.style.display = '';
+            }
+        }
+
+        // ── Error Handling ────────────────────────────────────────
+        function handleAuthError(code) {
+            const messages = {
+                'auth/user-not-found': 'Yaar account nahi mila! Signup karo pehle.',
+                'auth/wrong-password': 'Password galat hai bhai!',
+                'auth/invalid-email': 'Email sahi format mein daalo.',
+                'auth/too-many-requests': 'Bahut zyada tries! Thoda ruko.',
+                'auth/invalid-credential': 'Email ya password galat hai!',
+                'auth/email-already-in-use': 'Ye email already hai! Log in karo.',
+                'auth/weak-password': 'Password thoda strong chahiye — 6+ characters.'
+            };
+            showToast(messages[code] || 'Kuch gadbad ho gayi! Dubara try karo.', 'error');
+        }
+
+        // ── Login ─────────────────────────────────────────────────
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-password').value;
+            setBtnLoading('login-btn-el', 'login-btn-text', 'login-btn-icon', true, 'Log In');
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch (err) {
+                setBtnLoading('login-btn-el', 'login-btn-text', 'login-btn-icon', false, 'Log In');
+                handleAuthError(err.code);
+            }
+        });
+
+        // ── Signup ────────────────────────────────────────────────
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (strengthScore < 2) {
+                showToast('Password thoda strong banao bhai!', 'error');
+                return;
+            }
+            const name = document.getElementById('signup-name').value;
+            const email = document.getElementById('signup-email').value;
+            const pass = document.getElementById('signup-password').value;
+            const college = document.getElementById('signup-college').value;
+
+            setBtnLoading('signup-btn-el', 'signup-btn-text', 'signup-btn-icon', true, 'Create Free Account');
+            try {
+                const cred = await createUserWithEmailAndPassword(auth, email, pass);
+                await updateProfile(cred.user, { displayName: name });
+                await setDoc(doc(db, 'users', cred.user.uid), {
+                    name, college, email,
+                    createdAt: serverTimestamp(),
+                    streak: 0, lastActiveDate: ""
+                });
+                showToast(`StemVI mein welcome hai ${name}! 🌿`, 'success');
+                setTimeout(() => window.location.href = 'Dashboard.html', 1500);
+            } catch (err) {
+                setBtnLoading('signup-btn-el', 'signup-btn-text', 'signup-btn-icon', false, 'Create Free Account');
+                handleAuthError(err.code);
+            }
+        });
+
+        // ── Google Login ──────────────────────────────────────────
+        window.handleGoogleLogin = async function () {
+            const provider = new GoogleAuthProvider();
+            try {
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+                const userDoc = await getDoc(doc(db, 'users', user.uid));
+                if (!userDoc.exists()) {
+                    await setDoc(doc(db, 'users', user.uid), {
+                        name: user.displayName, college: '', email: user.email,
+                        createdAt: serverTimestamp(),
+                        streak: 0, lastActiveDate: ""
+                    });
+                }
+            } catch (err) {
+                if (err.code === 'auth/popup-blocked') {
+                    showToast('Popup block hua! Browser settings check karo.', 'error');
+                } else if (err.code !== 'auth/popup-closed-by-user') {
+                    showToast('Google login mein dikkat aayi!', 'error');
+                }
+            }
+        }
+
+        // ── Guest Login ───────────────────────────────────────────
+        window.handleGuestLogin = async function () {
+            try {
+                const cred = await signInAnonymously(auth);
+                await setDoc(doc(db, 'users', cred.user.uid), {
+                    name: 'Guest User', college: 'Unknown', email: '',
+                    isAnonymous: true,
+                    createdAt: serverTimestamp(),
+                    streak: 0, lastActiveDate: ""
+                });
+                showToast('Guest mode mein welcome! Data save nahi hoga permanently. 🎭', 'info');
+            } catch (err) {
+                showToast('Guest login nahi ho pa raha!', 'error');
+            }
+        }
+
+        // ── Forgot Password ───────────────────────────────────────
+        window.handleForgotPassword = async function () {
+            const email = document.getElementById('reset-email').value;
+            if (!email) { showToast('Pehle email daalo!', 'error'); return; }
+            try {
+                await sendPasswordResetEmail(auth, email);
+                showToast('Reset link bhej diya! Email check karo 📧', 'success');
+                document.getElementById('forgot-ui').classList.remove('open');
+            } catch (err) {
+                showToast('Email bhejne mein error!', 'error');
+            }
+        }
+    </script>
+
+</body>
+
+</html>

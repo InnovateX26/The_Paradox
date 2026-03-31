@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>StemVI Doubt-Bot | Interactive Learning</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Playfair+Display:ital,wght@1,700;1,900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#9AB17A",
+                        "on-primary": "#1e2511",
+                        secondary: "#C3CC9B",
+                        "on-secondary": "#1e2511",
+                        dark: "#1e2511",
+                        "dark-2": "#232b14",
+                        "dark-3": "#191f0e",
+                        "dark-4": "#0f1509",
+                        surface: "#1e2511",
+                        "on-surface": "#FBE8CE",
+                        "on-surface-variant": "rgba(251, 232, 206, 0.7)",
+                        outline: "rgba(154, 177, 122, 0.2)",
+                    },
+                    fontFamily: {
+                        headline: ["Plus Jakarta Sans", "sans-serif"],
+                        body: ["Plus Jakarta Sans", "sans-serif"],
+                    },
+                    borderRadius: { "DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        :root {
+            --dark: #1e2511;
+            --dark-2: #232b14;
+            --dark-3: #191f0e;
+            --dark-4: #0f1509;
+            --sage: #9AB17A;
+            --sage-light: #C3CC9B;
+            --cream: #FBE8CE;
+            --glass: rgba(35, 43, 20, 0.6);
+            --glass-border: 1px solid rgba(195, 204, 155, 0.1);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: var(--glass-border);
+        }
+        .bot-bubble-glass {
+            background: rgba(35, 43, 20, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(154, 177, 122, 0.1);
+        }
+
+        /* Premium Motion Animations */
+        @keyframes message-slide-in-right {
+            from { opacity: 0; transform: translateX(20px) scale(0.95); }
+            to { opacity: 1; transform: translateX(0) scale(1); }
+        }
+        @keyframes message-slide-in-left {
+            from { opacity: 0; transform: translateX(-20px) scale(0.95); }
+            to { opacity: 1; transform: translateX(0) scale(1); }
+        }
+        @keyframes progress-load {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+        @keyframes ping-premium {
+            0% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { transform: scale(1.4); opacity: 0; box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+            100% { transform: scale(1); opacity: 0; }
+        }
+
+        .animate-message-right { animation: message-slide-in-right 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards; }
+        .animate-message-left { animation: message-slide-in-left 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards; }
+        
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: #5a623a;
+            z-index: 100;
+            animation: progress-load 1.5s ease-in-out forwards;
+        }
+
+        .ping-ring {
+            position: absolute;
+            border-radius: 9999px;
+            animation: ping-premium 2s infinite;
+        }
+
+        .nav-card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .nav-card-hover:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .btn-hover-scale {
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-hover-scale:hover {
+            transform: scale(1.05);
+        }
+        .btn-hover-scale:active {
+            transform: scale(0.95);
+        }
+
+        .slide-content {
+            animation: message-slide-in-right 0.6s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-dark-4 font-body text-on-surface selection:bg-primary-container selection:text-on-primary-container">
+<div class="progress-bar"></div>
+<!-- TopNavBar -->
+<header class="fixed top-0 left-0 w-full z-50 bg-[#1e2511]/60 backdrop-blur-3xl border-b border-white/10">
+<nav class="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
+<div class="flex items-center gap-4">
+<span class="text-xl font-black text-primary font-headline tracking-tighter cursor-pointer" onclick="window.location.href='index.html'">StemVI</span>
+<div class="hidden sm:flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/5">
+<span class="relative flex h-2 w-2">
+<span class="ping-ring absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+</span>
+<span class="text-[10px] font-black uppercase tracking-widest text-primary">Lab Online</span>
+</div>
+</div>
+<div class="hidden lg:flex gap-8 items-center">
+<a class="text-on-surface/60 font-medium hover:text-primary transition-all text-sm" href="scan-explain.html">Scan</a>
+<a class="text-primary font-bold border-b-2 border-primary transition-all text-sm" href="Doubt_Bot.html">Doubt-Bot</a>
+<a class="text-on-surface/60 font-medium hover:text-primary transition-all text-sm" href="Flashcards.html">Flashcards</a>
+<a class="text-on-surface/60 font-medium hover:text-primary transition-all text-sm" href="Dashboard.html">Dashboard</a>
+</div>
+<div class="flex items-center gap-4">
+<button id="sign-out-btn" class="material-symbols-outlined text-primary p-2 hover:bg-white/10 rounded-full transition-all active:scale-90" title="Sign Out">logout</button>
+<button class="bg-primary text-dark px-5 py-2 rounded-xl font-headline font-black text-[10px] uppercase tracking-widest btn-hover-scale shadow-lg" onclick="window.location.href='Room_Bot_chat.html'">
+            Room Code
+        </button>
+</div>
+</nav>
+</header>
+<div class="flex h-screen pt-20 overflow-hidden slide-content">
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col h-full w-72 p-6 space-y-6 bg-dark-2/80 backdrop-blur-2xl border-r border-white/5">
+<div class="px-2 py-4">
+<h2 class="font-headline text-xl font-black text-primary tracking-tighter uppercase">History</h2>
+<p class="text-[10px] text-on-surface-variant font-black uppercase tracking-widest mt-1">Past Lab Sessions</p>
+</div>
+<div class="flex-1 overflow-y-auto space-y-4 custom-scrollbar" id="sessions-container">
+<!-- Session Items Dynamic -->
+<p class="text-on-surface-variant text-xs italic p-4">Loading sessions...</p>
+</div>
+<button class="w-full py-4 bg-primary text-dark rounded-xl font-headline font-black uppercase tracking-widest text-[10px] shadow-lg btn-hover-scale flex items-center justify-center gap-2" id="new-doubt-btn">
+<span class="material-symbols-outlined text-sm">add</span>
+            New Doubt
+        </button>
+<div class="mt-auto p-4 bg-white/5 rounded-2xl border border-white/5 flex flex-col gap-4">
+    <div class="flex items-center gap-3 px-2">
+        <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-dark font-black tracking-tighter shadow-lg shadow-primary/20 shrink-0" id="user-avatar-initial">
+            ?
+        </div>
+        <div class="overflow-hidden">
+            <p class="text-sm font-bold text-on-surface truncate" id="user-name-display">Loading...</p>
+            <p class="text-[10px] text-on-surface-variant truncate font-medium" id="user-email-display">...</p>
+        </div>
+    </div>
+    <button id="sidebar-logout-btn" class="w-full py-2 bg-white/5 hover:bg-red-500/10 border border-white/5 hover:border-red-500/20 rounded-xl text-on-surface-variant hover:text-red-500 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-sm">logout</span>
+        Logout
+    </button>
+</div>
+</aside>
+<!-- Main Chat Area -->
+<main class="flex-1 flex flex-col relative bg-dark-4">
+<div class="flex-1 overflow-y-auto px-6 py-8 space-y-10 pb-48" id="chat-container">
+<!-- Initial Empty State -->
+<div class="h-full flex flex-col items-center justify-center text-center space-y-6 opacity-60 reveal-up">
+<div class="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-5xl">psychology</span>
+</div>
+<div>
+<h2 class="text-2xl font-black font-headline text-on-surface">Koi sawaal hai?</h2>
+<p class="text-on-surface-variant text-sm mt-2">Pooch lo! AI Lab is ready to explain in Hinglish. 🎯</p>
+</div>
+</div>
+</div>
+<!-- Bottom Floating Area -->
+<div class="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-dark-4 via-dark-4 to-transparent pt-20">
+<div class="max-w-4xl mx-auto space-y-6">
+<!-- Quick Reply Chips -->
+<div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar justify-center" id="quick-replies">
+<button class="whitespace-nowrap px-6 py-2.5 bg-white/5 hover:bg-white/10 text-on-surface-variant font-black text-[10px] uppercase tracking-widest rounded-xl border border-white/5 transition-all shadow-sm btn-hover-scale">
+                        Numerical kaise aayega?
+                    </button>
+<button class="whitespace-nowrap px-6 py-2.5 bg-white/5 hover:bg-white/10 text-on-surface-variant font-black text-[10px] uppercase tracking-widest rounded-xl border border-white/5 transition-all shadow-sm btn-hover-scale">
+                        Ek aur example do
+                    </button>
+<button class="whitespace-nowrap px-6 py-2.5 bg-white/5 hover:bg-white/10 text-on-surface-variant font-black text-[10px] uppercase tracking-widest rounded-xl border border-white/5 transition-all shadow-sm btn-hover-scale">
+                        Exam ke liye kya important hai?
+                    </button>
+</div>
+<!-- Input Bar -->
+<div class="relative bg-dark-2 rounded-2xl p-2.5 flex items-center gap-3 border border-white/5 focus-within:border-primary/30 transition-all shadow-2xl">
+<button class="p-3 text-on-surface-variant hover:text-primary transition-colors btn-hover-scale">
+<span class="material-symbols-outlined">mic</span>
+</button>
+<input class="flex-1 bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface-variant/30 font-medium px-2 text-sm" placeholder="Ask anything in Hinglish..." type="text" id="user-input"/>
+<button class="p-3 text-on-surface-variant hover:text-primary transition-colors btn-hover-scale">
+<span class="material-symbols-outlined">attach_file</span>
+</button>
+<button class="w-12 h-12 bg-primary text-dark rounded-xl flex items-center justify-center shadow-lg btn-hover-scale" id="send-btn">
+<span class="material-symbols-outlined font-black">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Mobile Navigation Toggle (Visual Only) -->
+<div class="md:hidden fixed bottom-6 right-6 z-50">
+<button class="w-16 h-16 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center btn-hover-scale">
+<span class="material-symbols-outlined text-3xl" data-icon="menu">menu</span>
+</button>
+</div>
+</body><script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+  import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, collection, query, where, orderBy, getDocs, addDoc, serverTimestamp, onSnapshot, limit } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+  import { initAuthGuard, handleSignOut } from "./js/auth-guard.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBrep0S6P0oAzMQ-bE8h7GHTi5wn_QNrVg",
+    authDomain: "stemvi-afbac.firebaseapp.com",
+    projectId: "stemvi-afbac",
+    storageBucket: "stemvi-afbac.firebasestorage.app",
+    messagingSenderId: "548343962225",
+    appId: "1:548343962225:web:5e5624839645924b1e19d0"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let currentUser = null;
+  let currentSessionId = null;
+
+  initAuthGuard(auth);
+  
+  const logoutBtns = ['sign-out-btn', 'sidebar-logout-btn'];
+  logoutBtns.forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.addEventListener('click', () => handleSignOut(auth));
+  });
+
+  window.initPage = async (user) => {
+    currentUser = user;
+    loadSessions(user.uid);
+    
+    document.getElementById('user-email-display').textContent = user.email;
+    
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      document.getElementById('user-name-display').textContent = userData.name || 'User';
+      document.getElementById('user-avatar-initial').textContent = (userData.name || 'U').charAt(0).toUpperCase();
+    }
+  };
+
+  async function loadSessions(uid) {
+    const q = query(collection(db, `chatSessions/${uid}/sessions`), orderBy("updatedAt", "desc"), limit(10));
+    const querySnapshot = await getDocs(q);
+    const container = document.getElementById('sessions-container');
+    container.innerHTML = '';
+    
+    if (querySnapshot.empty) {
+      container.innerHTML = '<p class="text-on-surface-variant text-[10px] p-4 uppercase font-black tracking-widest opacity-40 text-center">No history yet</p>';
+      return;
+    }
+
+    querySnapshot.forEach(doc => {
+      const data = doc.data();
+      const div = document.createElement('div');
+      const isActive = doc.id === currentSessionId;
+      div.className = `p-4 ${isActive ? 'bg-primary text-dark' : 'text-on-surface-variant hover:bg-white/5'} rounded-xl flex items-start gap-4 transition-all duration-300 cursor-pointer group`;
+      div.innerHTML = `
+        <span class="material-symbols-outlined text-sm ${isActive ? 'text-dark' : 'text-primary'}">${data.type === 'room' ? 'groups' : 'history'}</span>
+        <div class="overflow-hidden">
+          <p class="font-headline font-black text-xs uppercase tracking-tight truncate">${data.title || 'Untitled Session'}</p>
+          <p class="text-[10px] ${isActive ? 'text-dark/60' : 'text-on-surface-variant/40'} font-bold mt-1">${timeAgo(data.updatedAt)}</p>
+        </div>
+      `;
+      div.onclick = () => selectSession(doc.id);
+      container.appendChild(div);
+    });
+  }
+
+  async function selectSession(sessionId) {
+    if (currentSessionId === sessionId) return;
+    currentSessionId = sessionId;
+    
+    const chatContainer = document.getElementById('chat-container');
+    chatContainer.innerHTML = '<div class="h-full flex items-center justify-center"><div class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div></div>';
+    
+    // Load messages via onSnapshot for real-time
+    const q = query(collection(db, `chatSessions/${currentUser.uid}/sessions/${sessionId}/messages`), orderBy("timestamp", "asc"));
+    
+    onSnapshot(q, (snapshot) => {
+      chatContainer.innerHTML = '';
+      if (snapshot.empty) {
+        chatContainer.innerHTML = '<p class="text-on-surface-variant text-sm italic text-center pt-20">No messages yet. Ask something!</p>';
+      }
+      snapshot.forEach(doc => {
+        appendMessageUI(doc.data());
+      });
+      chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+    });
+    loadSessions(currentUser.uid);
+  }
+
+  function appendMessageUI(msg) {
+    const container = document.getElementById('chat-container');
+    const isUser = msg.role === 'user';
+    const html = isUser ? `
+      <div class="flex flex-col items-end gap-2 max-w-2xl ml-auto animate-message-right">
+        <div class="bg-primary text-dark px-8 py-5 rounded-2xl rounded-tr-none shadow-xl font-medium">
+          <p class="text-sm leading-relaxed">${msg.content}</p>
+        </div>
+        <span class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 mr-2">${timeAgo(msg.timestamp)}</span>
+      </div>
+    ` : `
+      <div class="flex flex-col items-start gap-5 max-w-3xl animate-message-left">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border border-white/5">
+            <span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+          </div>
+          <span class="text-[10px] font-black uppercase tracking-widest text-primary">Lab Assistant</span>
+        </div>
+        <div class="bot-bubble-glass p-8 rounded-2xl rounded-tl-none prose prose-invert max-w-none">
+          <p class="text-on-surface leading-relaxed text-sm">${msg.content}</p>
+        </div>
+      </div>
+    `;
+    container.insertAdjacentHTML('beforeend', html);
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('user-input');
+    const content = input.value.trim();
+    if (!content || !currentUser) return;
+    
+    if (!currentSessionId) {
+      const docRef = await addDoc(collection(db, `chatSessions/${currentUser.uid}/sessions`), {
+        title: content.substring(0, 30),
+        updatedAt: serverTimestamp(),
+        type: 'doubt'
+      });
+      currentSessionId = docRef.id;
+      selectSession(currentSessionId);
+    }
+    
+    await addDoc(collection(db, `chatSessions/${currentUser.uid}/sessions/${currentSessionId}/messages`), {
+      role: 'user',
+      content,
+      timestamp: serverTimestamp()
+    });
+    
+    input.value = '';
+    
+    callOpenRouter(content);
+  }
+
+  async function callOpenRouter(userText) {
+    const systemPrompt = "You are StemVI's Lab Assistant. Explain STEM concepts in Hinglish. Be precise, use analogies, and encourage the student.";
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "anthropic/claude-3.5-sonnet",
+          messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userText }]
+        })
+      });
+      const data = await response.json();
+      const aiText = data.choices[0].message.content;
+      
+      await addDoc(collection(db, `chatSessions/${currentUser.uid}/sessions/${currentSessionId}/messages`), {
+        role: 'assistant',
+        content: aiText,
+        timestamp: serverTimestamp()
+      });
+
+      // Update session title & timestamp
+      await updateDoc(doc(db, `chatSessions/${currentUser.uid}/sessions`, currentSessionId), {
+        updatedAt: serverTimestamp()
+      });
+    } catch (err) {
+      console.error("AI Error:", err);
+    }
+  }
+
+  document.getElementById('send-btn').onclick = sendMessage;
+  document.getElementById('user-input').onkeypress = (e) => { if(e.key === 'Enter') sendMessage(); };
+  document.getElementById('new-doubt-btn').onclick = () => {
+    currentSessionId = null;
+    document.getElementById('chat-container').innerHTML = `
+      <div class="h-full flex flex-col items-center justify-center text-center space-y-6 opacity-60">
+        <div class="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center">
+          <span class="material-symbols-outlined text-primary text-5xl">psychology</span>
+        </div>
+        <div>
+          <h2 class="text-2xl font-black font-headline text-on-surface">New Session</h2>
+          <p class="text-on-surface-variant text-sm mt-2">Pooch lo! Lab is active. 🎯</p>
+        </div>
+      </div>
+    `;
+    loadSessions(currentUser.uid);
+  };
+
+  function timeAgo(ts) {
+    if(!ts) return 'Just now';
+    const date = ts.toDate ? ts.toDate() : new Date(ts);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+</script>
+</body></html>

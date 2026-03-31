@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>StemVI Progress Dashboard</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Playfair+Display:ital,wght@1,700;1,900&amp;display=swap" rel="stylesheet"/>
+<!-- Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#9AB17A",
+              "on-primary": "#1e2511",
+              secondary: "#C3CC9B",
+              "on-secondary": "#1e2511",
+              dark: "#1e2511",
+              "dark-2": "#232b14",
+              "dark-3": "#191f0e",
+              "dark-4": "#0f1509",
+              surface: "#1e2511",
+              "on-surface": "#FBE8CE",
+              "on-surface-variant": "rgba(251, 232, 206, 0.7)",
+              outline: "rgba(154, 177, 122, 0.2)",
+            },
+            fontFamily: {
+              headline: ["Plus Jakarta Sans", "sans-serif"],
+              body: ["Plus Jakarta Sans", "sans-serif"],
+            },
+            borderRadius: { DEFAULT: "1rem", lg: "2rem", xl: "3rem", full: "9999px" },
+          },
+        },
+      }
+    </script>
+    <style>
+        :root {
+            --dark: #1e2511;
+            --dark-2: #232b14;
+            --dark-3: #191f0e;
+            --dark-4: #0f1509;
+            --sage: #9AB17A;
+            --sage-light: #C3CC9B;
+            --cream: #FBE8CE;
+            --glass: rgba(35, 43, 20, 0.6);
+            --glass-border: 1px solid rgba(195, 204, 155, 0.1);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: var(--glass-border);
+        }
+        .activity-gradient {
+            background: linear-gradient(to right, #9AB17A, #C3CC9B);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Motion Design Animations */
+        @keyframes reveal-up {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .reveal-up {
+            opacity: 0;
+            animation: reveal-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes fill-bar {
+            from { width: 0%; }
+        }
+        .fill-animate {
+            animation: fill-bar 1.2s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+        }
+
+        @keyframes attention-shake {
+            0%, 100% { transform: rotate(0deg); }
+            20% { transform: rotate(-2deg); }
+            40% { transform: rotate(2deg); }
+            60% { transform: rotate(-1deg); }
+            80% { transform: rotate(1deg); }
+        }
+        .shake-on-load {
+            animation: attention-shake 0.6s cubic-bezier(0.36, 0, 0.66, -0.56) both;
+            animation-delay: 1.2s;
+        }
+
+        .hover-lift {
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+        }
+        .hover-lift:hover {
+            transform: translateY(-8px);
+        }
+
+        /* Stagger delays */
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+        .delay-4 { animation-delay: 0.4s; }
+        .delay-5 { animation-delay: 0.5s; }
+    </style>
+</head>
+<body class="bg-dark-4 font-body text-on-surface">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 bg-[#1e2511]/60 backdrop-blur-3xl border-b border-white/10">
+<nav class="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
+<div class="text-2xl font-black text-primary tracking-tighter cursor-pointer font-headline" onclick="window.location.href='index.html'">
+                StemVI
+            </div>
+<div class="hidden md:flex gap-8 items-center">
+<a class="text-on-surface/60 font-medium hover:text-primary hover:scale-95 transition-all text-sm" href="scan-explain.html">Scan</a>
+<a class="text-on-surface/60 font-medium hover:text-primary hover:scale-95 transition-all text-sm" href="Doubt_Bot.html">Doubt-Bot</a>
+<a class="text-on-surface/60 font-medium hover:text-primary hover:scale-95 transition-all text-sm" href="Flashcards.html">Flashcards</a>
+<a class="text-primary font-bold border-b-2 border-primary pb-1 transition-all text-sm" href="Dashboard.html">Dashboard</a>
+</div>
+<div class="flex items-center gap-4">
+<button id="sign-out-btn" class="material-symbols-outlined text-primary p-2 hover:bg-white/10 rounded-full transition-all active:scale-90" title="Sign Out">logout</button>
+<button class="material-symbols-outlined text-primary p-2 hover:bg-white/10 rounded-full transition-all active:scale-90">account_circle</button>
+</div>
+</nav>
+</header>
+<!-- SideNavBar -->
+<aside class="hidden lg:flex fixed left-0 top-0 h-screen w-72 flex flex-col p-6 z-40 bg-dark-2/80 backdrop-blur-2xl border-r border-white/5">
+<div class="mt-20 mb-10 px-4">
+<h2 class="text-primary font-black text-3xl font-headline tracking-tighter">StemVI</h2>
+<p class="text-on-surface-variant text-xs mt-1 uppercase tracking-widest font-bold">Laboratory Space</p>
+</div>
+<div class="flex flex-col gap-2">
+<a class="flex items-center gap-4 bg-primary text-dark rounded-xl mx-2 px-6 py-4 transition-all duration-300 ease-in-out font-bold shadow-lg shadow-primary/10" href="Dashboard.html">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-4 text-on-surface-variant px-6 py-4 hover:bg-white/5 rounded-xl transition-all duration-300 ease-in-out font-semibold hover:translate-x-2" href="scan-explain.html">
+<span class="material-symbols-outlined">qr_code_scanner</span>
+<span>Scan</span>
+</a>
+<a class="flex items-center gap-4 text-on-surface-variant px-6 py-4 hover:bg-white/5 rounded-xl transition-all duration-300 ease-in-out font-semibold hover:translate-x-2" href="Doubt_Bot.html">
+<span class="material-symbols-outlined">smart_toy</span>
+<span>Doubt-Bot</span>
+</a>
+<a class="flex items-center gap-4 text-on-surface-variant px-6 py-4 hover:bg-white/5 rounded-xl transition-all duration-300 ease-in-out font-semibold hover:translate-x-2" href="Flashcards.html">
+<span class="material-symbols-outlined">style</span>
+<span>Flashcards</span>
+</a>
+<a class="flex items-center gap-4 text-on-surface-variant px-6 py-4 hover:bg-white/5 rounded-xl transition-all duration-300 ease-in-out font-semibold hover:translate-x-2" href="Room_Bot_chat.html">
+<span class="material-symbols-outlined">groups</span>
+<span>Room Bot</span>
+</a>
+</div>
+<div class="mt-auto p-4 bg-white/5 rounded-2xl border border-white/5 flex flex-col gap-4">
+    <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-dark font-black tracking-tighter shadow-lg shadow-primary/20 shrink-0" id="user-avatar-initial">
+            ?
+        </div>
+        <div class="overflow-hidden">
+            <p class="text-sm font-bold text-on-surface truncate" id="user-name-display">Loading...</p>
+            <p class="text-[10px] text-on-surface-variant truncate font-medium" id="user-email-display">...</p>
+        </div>
+    </div>
+    <button id="sidebar-logout-btn" class="w-full py-2 bg-white/5 hover:bg-red-500/10 border border-white/5 hover:border-red-500/20 rounded-xl text-on-surface-variant hover:text-red-500 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-sm">logout</span>
+        Logout
+    </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="pt-28 lg:pl-80 pr-6 pb-20 min-h-screen bg-dark-4">
+<div class="max-w-5xl mx-auto space-y-12">
+<!-- Hero Greeting Section -->
+<section class="relative reveal-up delay-1">
+<div class="glass-panel p-10 rounded-2xl relative overflow-hidden group">
+<div class="absolute -right-10 -top-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-all duration-700"></div>
+<div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+<div>
+<h1 class="text-4xl md:text-5xl font-black font-headline text-on-surface tracking-tighter mb-2">
+                                Kya haal hai, <span class="inline-block transition-transform hover:scale-110 cursor-default">Student!</span> 🌿
+                            </h1>
+<p class="text-on-surface-variant text-lg font-medium">Ready to break some STEM barriers today?</p>
+</div>
+<div class="flex gap-4">
+<!-- Streak Chip -->
+<div class="bg-white/5 backdrop-blur-md px-6 py-4 rounded-xl flex items-center gap-3 border border-white/5 shadow-sm hover:bg-white/10 transition-colors cursor-default">
+<span class="material-symbols-outlined text-orange-400 text-3xl animate-pulse" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+<div>
+<p class="text-2xl font-black text-on-surface counter-up" data-target="0">0</p>
+<p class="text-[10px] uppercase font-black tracking-widest text-on-surface-variant">Days Streak</p>
+</div>
+</div>
+<!-- Scan Count Chip -->
+<div class="bg-white/5 backdrop-blur-md px-6 py-4 rounded-xl flex items-center gap-3 border border-white/5 shadow-sm hover:bg-white/10 transition-colors cursor-default">
+<span class="material-symbols-outlined text-primary text-3xl">camera_enhance</span>
+<div>
+<p class="text-2xl font-black text-on-surface counter-up" data-target="0">0</p>
+<p class="text-[10px] uppercase font-black tracking-widest text-on-surface-variant">Weekly Scans</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Scan Activity Bento Grid -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Activity Chart -->
+<div class="lg:col-span-2 glass-panel p-8 rounded-2xl reveal-up delay-2 hover-lift">
+<div class="flex justify-between items-center mb-10">
+<h3 class="text-xl font-black font-headline text-on-surface uppercase tracking-tight">Scan Activity</h3>
+<span class="text-[10px] font-black text-primary px-4 py-1 bg-primary/10 rounded-full uppercase tracking-widest cursor-pointer">Last 7 Days</span>
+</div>
+<div class="space-y-8">
+<!-- Physics -->
+<div class="space-y-3 group">
+<div class="flex justify-between text-xs font-black uppercase tracking-tighter text-on-surface-variant">
+<span>Physics</span>
+<span>0 Scans</span>
+</div>
+<div class="relative w-full h-3 bg-white/5 rounded-full overflow-hidden flex items-center">
+<div class="h-full activity-gradient rounded-full fill-animate" style="width: 0%; animation-delay: 0.8s;"></div>
+</div>
+</div>
+<!-- Chemistry -->
+<div class="space-y-3 group">
+<div class="flex justify-between text-xs font-black uppercase tracking-tighter text-on-surface-variant">
+<span>Chemistry</span>
+<span>0 Scans</span>
+</div>
+<div class="relative w-full h-3 bg-white/5 rounded-full overflow-hidden flex items-center">
+<div class="h-full activity-gradient rounded-full fill-animate" style="width: 0%; animation-delay: 0.9s;"></div>
+</div>
+</div>
+<!-- Maths -->
+<div class="space-y-3 group">
+<div class="flex justify-between text-xs font-black uppercase tracking-tighter text-on-surface-variant">
+<span>Maths</span>
+<span>0 Scans</span>
+</div>
+<div class="relative w-full h-3 bg-white/5 rounded-full overflow-hidden flex items-center">
+<div class="h-full activity-gradient rounded-full fill-animate" style="width: 0%; animation-delay: 1.0s;"></div>
+</div>
+</div>
+<!-- Biology -->
+<div class="space-y-3 group">
+<div class="flex justify-between text-xs font-black uppercase tracking-tighter text-on-surface-variant">
+<span>Biology</span>
+<span>0 Scans</span>
+</div>
+<div class="relative w-full h-3 bg-white/5 rounded-full overflow-hidden flex items-center">
+<div class="h-full activity-gradient rounded-full fill-animate" style="width: 0%; animation-delay: 1.1s;"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Weak Areas Pill Cards -->
+<div class="glass-panel p-8 rounded-2xl flex flex-col reveal-up delay-3 hover-lift">
+<h3 class="text-xl font-black font-headline text-on-surface mb-8 uppercase tracking-tight">Weak Areas</h3>
+<div class="flex flex-wrap gap-3" id="weak-areas-container">
+<!-- Placeholder dynamic -->
+<p class="text-on-surface-variant text-sm italic">Loading your focus areas...</p>
+</div>
+<div class="mt-auto pt-8">
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest leading-relaxed">Focus on these concepts to improve your mastery score by 15%.</p>
+</div>
+</div>
+</section>
+<!-- Offline Saved Section -->
+<section class="reveal-up delay-4">
+<div class="flex items-center justify-between mb-8">
+<h3 class="text-2xl font-black font-headline text-on-surface uppercase tracking-tight">Recent Activity</h3>
+<button class="text-primary font-bold text-xs uppercase tracking-widest hover:underline transition-all">View All</button>
+</div>
+<div class="flex gap-6 overflow-x-auto pb-6 -mx-2 px-2 no-scrollbar" id="recent-activity-container">
+<!-- Mini Cards Dynamic -->
+<p class="text-on-surface-variant text-sm italic">Pehle data load hone do...</p>
+</div>
+</section>
+<!-- CTA Section -->
+<section class="flex justify-center pt-10 reveal-up delay-5">
+<button class="bg-primary text-dark px-12 py-6 rounded-2xl text-xl font-black font-headline shadow-2xl shadow-primary/20 hover:shadow-primary/40 hover:scale-105 active:scale-95 transition-all flex items-center gap-4 group" onclick="window.location.href='Flashcards.html'">
+<span class="material-symbols-outlined group-hover:rotate-12 transition-transform" style="font-variation-settings: 'FILL' 1;">style</span>
+                    CHALU KAREIN? (FLASHCARDS)
+                </button>
+</section>
+</div>
+</main>
+<!-- Footer -->
+<footer class="lg:pl-72 w-full border-t border-white/5 bg-transparent">
+<div class="max-w-7xl mx-auto px-8 py-16 flex flex-col items-center gap-6">
+<div class="flex gap-10">
+<a class="text-on-surface-variant hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="#">Help Center</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="#">Privacy</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="#">Research Journal</a>
+</div>
+<p class="text-on-surface-variant/40 text-[10px] font-black uppercase tracking-[0.2em]">© 2024 StemVI Laboratory</p>
+</div>
+</footer>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+  import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, collection, query, where, orderBy, getDocs, updateDoc, setDoc, limit } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+  import { initAuthGuard, handleSignOut } from "./js/auth-guard.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBrep0S6P0oAzMQ-bE8h7GHTi5wn_QNrVg",
+    authDomain: "stemvi-afbac.firebaseapp.com",
+    projectId: "stemvi-afbac",
+    storageBucket: "stemvi-afbac.firebasestorage.app",
+    messagingSenderId: "548343962225",
+    appId: "1:548343962225:web:5e5624839645924b1e19d0"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let currentUser = null;
+
+  // Sync Auth State
+  initAuthGuard(auth);
+
+  const logoutBtns = ['sign-out-btn', 'sidebar-logout-btn'];
+  logoutBtns.forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.addEventListener('click', () => handleSignOut(auth));
+  });
+
+  window.initPage = async (user) => {
+    currentUser = user;
+    const userDocRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userDocRef);
+    
+    if (userSnap.exists()) {
+      const userData = userSnap.data();
+      updateDashboardUI(userData);
+      updateStreak(userDocRef, userData);
+      loadActivityData(user.uid);
+      loadRecentActivity(user.uid);
+    }
+  };
+
+  function updateDashboardUI(data) {
+    const nameEl = document.querySelector('h1 span');
+    if (nameEl) nameEl.textContent = data.name || 'Student';
+    
+    // Sidebar Profile
+    const sidebarName = document.getElementById('user-name-display');
+    const sidebarEmail = document.getElementById('user-email-display');
+    const sidebarAvatar = document.getElementById('user-avatar-initial');
+    
+    if (sidebarName) sidebarName.textContent = data.name || 'User';
+    if (sidebarEmail && currentUser) sidebarEmail.textContent = currentUser.email;
+    if (sidebarAvatar && data.name) sidebarAvatar.textContent = data.name.charAt(0).toUpperCase();
+
+    const counters = document.querySelectorAll('.counter-up');
+    if (counters.length >= 1) counters[0].setAttribute('data-target', data.streak || 0);
+    animateCounters();
+  }
+
+  async function updateStreak(userDocRef, userData) {
+    const today = new Date().toISOString().split('T')[0];
+    if (userData.lastActiveDate !== today) {
+      const newStreak = (userData.streak || 0) + 1;
+      await updateDoc(userDocRef, {
+        streak: newStreak,
+        lastActiveDate: today
+      });
+      document.querySelectorAll('.counter-up')[0].setAttribute('data-target', newStreak);
+      animateCounters();
+    }
+  }
+
+  async function loadActivityData(uid) {
+    const q = query(collection(db, `scans/${uid}/history`));
+    const querySnapshot = await getDocs(q);
+    const counts = { Physics: 0, Chemistry: 0, Maths: 0, Biology: 0 };
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    querySnapshot.forEach(doc => {
+      const data = doc.data();
+      if (counts[data.subject] !== undefined) counts[data.subject]++;
+    });
+
+    const weeklyScansCounter = document.querySelectorAll('.counter-up')[1];
+    if (weeklyScansCounter) {
+      weeklyScansCounter.setAttribute('data-target', querySnapshot.size);
+      animateCounters();
+    }
+
+    // Update bars
+    const barMap = { Physics: 0, Chemistry: 1, Maths: 2, Biology: 3 };
+    Object.keys(counts).forEach(sub => {
+      const barIdx = barMap[sub];
+      const bar = document.querySelectorAll('.fill-animate')[barIdx];
+      const countEl = bar.parentElement.previousElementSibling.lastElementChild;
+      countEl.textContent = `${counts[sub]} Scans`;
+      bar.style.width = `${Math.min(counts[sub] * 10, 100)}%`;
+    });
+
+    // Weak areas
+    const weakAreasContainer = document.getElementById('weak-areas-container');
+    weakAreasContainer.innerHTML = '';
+    
+    let hasWeakAreas = false;
+    Object.keys(counts).forEach(sub => {
+      if (counts[sub] < 3) {
+        hasWeakAreas = true;
+        const chip = document.createElement('div');
+        chip.className = 'flex items-center gap-3 bg-red-500/10 px-5 py-3 rounded-xl border border-red-500/20 hover:scale-105 transition-transform cursor-pointer group';
+        chip.innerHTML = `<span class="material-symbols-outlined text-red-500 text-sm group-hover:animate-bounce">warning</span><span class="text-xs font-black uppercase tracking-widest text-on-surface">${sub}</span>`;
+        chip.onclick = () => window.location.href = `Doubt_Bot.html?topic=${sub}`;
+        weakAreasContainer.appendChild(chip);
+      }
+    });
+    
+    if (!hasWeakAreas) {
+      weakAreasContainer.innerHTML = '<p class="text-primary text-xs font-black uppercase tracking-widest">Sab changa si! Keep it up. ✨</p>';
+    }
+  }
+
+  async function loadRecentActivity(uid) {
+    const q = query(collection(db, `scans/${uid}/history`), orderBy("scannedAt", "desc"), limit(5));
+    const querySnapshot = await getDocs(q);
+    const container = document.getElementById('recent-activity-container');
+    container.innerHTML = '';
+    
+    if (querySnapshot.empty) {
+      container.innerHTML = '<p class="text-on-surface-variant text-sm italic">Koi activity nahi mili. Scan something!</p>';
+      return;
+    }
+
+    querySnapshot.forEach(doc => {
+      const data = doc.data();
+      const card = document.createElement('div');
+      card.className = 'min-w-[240px] glass-panel p-6 rounded-2xl hover:bg-white/5 transition-all group cursor-pointer hover-lift';
+      card.innerHTML = `
+        <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <span class="material-symbols-outlined text-primary text-xl">${getSubjectIcon(data.subject)}</span>
+        </div>
+        <h4 class="font-black text-on-surface uppercase tracking-tight leading-tight">${data.topic || 'Untitled Scan'}</h4>
+        <p class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mt-3">${timeAgo(data.scannedAt)}</p>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  function getSubjectIcon(sub) {
+    const icons = { Physics: 'science', Chemistry: 'biotech', Maths: 'calculate', Biology: 'psychology' };
+    return icons[sub] || 'menu_book';
+  }
+
+  function timeAgo(timestamp) {
+    if (!timestamp) return 'Just now';
+    const seconds = Math.floor((new Date() - timestamp.toDate()) / 1000);
+    if (seconds < 60) return 'Just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return `${Math.floor(hours / 24)}d ago`;
+  }
+
+  const animateCounters = () => {
+    const counters = document.querySelectorAll('.counter-up');
+    counters.forEach(counter => {
+      const target = parseInt(counter.getAttribute('data-target'));
+      const duration = 1500;
+      let startTime = null;
+
+      const step = (timestamp) => {
+        if (!startTime) startTime = timestamp;
+        const progress = Math.min((timestamp - startTime) / duration, 1);
+        counter.innerText = Math.floor(progress * target);
+        if (progress < 1) {
+          window.requestAnimationFrame(step);
+        }
+      };
+      window.requestAnimationFrame(step);
+    });
+  };
+
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(animateCounters, 300);
+  });
+</script>
+</body></html>
