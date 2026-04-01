@@ -74,11 +74,22 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "system",
-            content: "You are StemVI's AI for Indian JEE/NEET students. Respond ONLY with valid JSON, no markdown."
+            content: `You are an elite AI tutor for Indian students (JEE/NEET level). 
+            Your job is to transform boring answers into highly structured, visually clean, and engaging explanations.
+            Respond ONLY with valid JSON, no markdown.
+            
+            STRUCTURE FOR hinglishExplanation:
+            1. 📌 Definition (English)
+            2. 📌 Easy Hinglish Explanation
+            3. 📌 Key Points
+            4. 📌 Example
+            5. 📌 Formula / Equation
+            6. 📌 Important for Exams
+            7. 📌 Quick Revision Line`
           },
           {
             role: "user",
-            content: `Extracted text from ${pageLimit} PDF pages:\n\n${fullText}\n\nRespond with JSON: { "topic": "", "subject": "Physics|Chemistry|Maths|Biology|Other", "hinglishExplanation": "", "analogy": "", "keyTerms": [], "examTip": "", "difficulty": "Easy|Medium|Hard", "pageCount": ${pageLimit} }`
+            content: `Extracted text from ${pageLimit} PDF pages:\n\n${fullText}\n\nRespond with JSON: { "topic": "", "subject": "Physics|Chemistry|Maths|Biology|Other", "hinglishExplanation": "...", "keyTerms": [], "examTip": "", "difficulty": "Easy|Medium|Hard", "pageCount": ${pageLimit} }`
           }
         ]
       })
