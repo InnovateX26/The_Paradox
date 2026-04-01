@@ -5,19 +5,24 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'POST') return res.status(405).json({ reply: "Method not allowed" });
 
-  const { message, roomId, topic } = req.body;
+  const { message } = req.body;
+
+  // 1. INPUT LOGGING
+  console.log("🚀 Incoming message:", message);
+  if (!message) return res.status(200).json({ reply: "Message is empty!" });
 
   try {
-    // 1. INPUT LOGGING
-    console.log("🚀 Incoming message:", message);
-    if (!message) return res.status(200).json({ reply: "Message is empty!" });
+    // 2. SENDING TO AI (with 15s timeout)
+    console.log("📡 Sending to AI (OpenRouter)...");
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // Increased to 60s for stability
 
-    // 2. SENDING TO AI
-    console.log("📡 Sending to AI...");
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
+      signal: controller.signal,
       headers: {
         "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
@@ -29,7 +34,7 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "system",
-            content: "You are a friendly teacher! Explain in simple Hinglish, keep it step-by-step, and be helpful."
+            content: "You are a friendly teacher! Explain in simple Hinglish like a friendly teacher."
           },
           {
             role: "user",
@@ -38,38 +43,43 @@ export default async function handler(req, res) {
         ]
       })
     });
+    clearTimeout(timeoutId);
 
     // 3. CRITICAL STATUS CHECK
     if (!response.ok) {
-        const errorText = await response.text();
-        console.error("❌ OpenRouter API ERROR:", errorText);
-        return res.status(200).json({
-          reply: "AI failed to respond. Check API key or credits."
-        });
+      const errText = await response.text();
+      console.error(`❌ OpenRouter API ERROR [${response.status}]:`, errText);
+
+      return res.status(200).json({
+        reply: `AI failed to respond (Status ${response.status}). Please check system logs.`
+      });
     }
 
-    // 4. SAFE JSON PARSE
     const data = await response.json();
-    console.log("📥 AI raw response:", JSON.stringify(data));
+    console.log("📥 AI RAW:", JSON.stringify(data));
 
     const reply = data?.choices?.[0]?.message?.content;
 
-    // 5. EMPTY REPLY CHECK
     if (!reply) {
-      console.warn("⚠️ AI returned empty response.");
       return res.status(200).json({
         reply: "AI returned empty response."
       });
     }
 
-    // 6. FINAL SUCCESSFUL RESPONSE
-    return res.status(200).json({ reply });
+    return res.status(200).json({ 
+      reply, 
+      message: reply 
+    });
 
   } catch (err) {
-    // 7. FULL ERROR HANDLING
-    console.error("🚨 SERVER ERROR:", err);
+    // 4. FULL ERROR HANDLING
+    const isTimeout = err.name === 'AbortError';
+    console.error(isTimeout ? "⏳ AI TIMEOUT (60s)" : "🚨 SERVER ERROR:", err);
+    
+    const msg = isTimeout ? "AI request timed out (60s)." : err.message;
+
     return res.status(200).json({
-      reply: "Server crashed. Check terminal logs."
+      reply: `System Error: ${msg}`
     });
   }
 }
