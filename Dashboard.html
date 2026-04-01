@@ -230,7 +230,7 @@
 <span>0 Scans</span>
 </div>
 <div class="relative w-full h-3 bg-white/5 rounded-full overflow-hidden flex items-center">
-<div class="h-full activity-gradient rounded-full fill-animate" style="width: 0%; animation-delay: 0.8s;"></div>
+<div id="physics-bar" class="h-full activity-gradient rounded-full fill-animate" style="width: 0%; animation-delay: 0.8s;"></div>
 </div>
 </div>
 <!-- Chemistry -->
@@ -240,7 +240,7 @@
 <span>0 Scans</span>
 </div>
 <div class="relative w-full h-3 bg-white/5 rounded-full overflow-hidden flex items-center">
-<div class="h-full activity-gradient rounded-full fill-animate" style="width: 0%; animation-delay: 0.9s;"></div>
+<div id="chemistry-bar" class="h-full activity-gradient rounded-full fill-animate" style="width: 0%; animation-delay: 0.9s;"></div>
 </div>
 </div>
 <!-- Maths -->
@@ -250,7 +250,7 @@
 <span>0 Scans</span>
 </div>
 <div class="relative w-full h-3 bg-white/5 rounded-full overflow-hidden flex items-center">
-<div class="h-full activity-gradient rounded-full fill-animate" style="width: 0%; animation-delay: 1.0s;"></div>
+<div id="maths-bar" class="h-full activity-gradient rounded-full fill-animate" style="width: 0%; animation-delay: 1.0s;"></div>
 </div>
 </div>
 <!-- Biology -->
@@ -260,7 +260,7 @@
 <span>0 Scans</span>
 </div>
 <div class="relative w-full h-3 bg-white/5 rounded-full overflow-hidden flex items-center">
-<div class="h-full activity-gradient rounded-full fill-animate" style="width: 0%; animation-delay: 1.1s;"></div>
+<div id="biology-bar" class="h-full activity-gradient rounded-full fill-animate" style="width: 0%; animation-delay: 1.1s;"></div>
 </div>
 </div>
 </div>
@@ -268,7 +268,7 @@
 <!-- Weak Areas Pill Cards -->
 <div class="glass-panel p-8 rounded-2xl flex flex-col reveal-up delay-3 hover-lift">
 <h3 class="text-xl font-black font-headline text-on-surface mb-8 uppercase tracking-tight">Weak Areas</h3>
-<div class="flex flex-wrap gap-3" id="weak-areas-container">
+<div class="flex flex-wrap gap-3" id="weak-areas-list">
 <!-- Placeholder dynamic -->
 <p class="text-on-surface-variant text-sm italic">Loading your focus areas...</p>
 </div>
@@ -329,7 +329,6 @@
 
   let currentUser = null;
 
-  // Sync Auth State
   initAuthGuard(auth);
 
   const logoutBtns = ['sign-out-btn', 'sidebar-logout-btn'];
@@ -340,19 +339,88 @@
 
   window.initPage = async (user) => {
     currentUser = user;
+    console.log("🚀 Initializing Dashboard for:", user.email);
+    
+    // STEP 1: API Initiation
+    loadDashboard(user.uid);
+    loadRecentActivity(user.uid);
+
     const userDocRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userDocRef);
     
     if (userSnap.exists()) {
       const userData = userSnap.data();
-      updateDashboardUI(userData);
+      updateDashboardUIHeader(userData);
       updateStreak(userDocRef, userData);
-      loadActivityData(user.uid);
-      loadRecentActivity(user.uid);
+    } else {
+      console.log("📝 New User Detected - creating basic profile...");
+      const basicData = { name: user.displayName || 'Student', streak: 1, lastActiveDate: new Date().toISOString().split('T')[0] };
+      updateDashboardUIHeader(basicData);
+      await setDoc(userDocRef, basicData, { merge: true });
     }
   };
 
-  function updateDashboardUI(data) {
+  async function loadDashboard(uid) {
+    console.log("STEP 1: click (Dashboard Loading Triggered)");
+    console.log("Loading dashboard...");
+    
+    try {
+      const res = await fetch("/api/dashboard?uid=" + uid);
+      console.log("STEP 3: API status:", res.status);
+      
+      const data = await res.json();
+      console.log("STEP 4: Dashboard data:", data);
+      
+      renderDashboardData(data);
+    } catch (err) {
+      console.error("Dashboard error:", err);
+    }
+  }
+
+  function renderDashboardData(data) {
+    if (!data || !data.focus) return;
+
+    // Focus Duration Bars
+    setBarValue("physics", data.focus.physics);
+    setBarValue("chemistry", data.focus.chemistry);
+    setBarValue("maths", data.focus.maths);
+    setBarValue("biology", data.focus.biology);
+
+    // Total Duration Chip
+    const totalMins = Object.values(data.focus).reduce((a, b) => a + b, 0);
+    const totalHours = Math.floor(totalMins / 60);
+    const remainingMins = totalMins % 60;
+    const totalEl = document.getElementById('total-study-time');
+    if (totalEl) totalEl.textContent = `${totalHours}h ${remainingMins}m`;
+
+    // Weak Areas
+    const weakList = document.getElementById("weak-areas-list");
+    if (weakList && data.weakAreas) {
+      weakList.innerHTML = data.weakAreas.map(topic => `
+        <div class="flex items-center gap-3 bg-red-500/10 px-5 py-3 rounded-xl border border-red-500/20 hover:scale-105 transition-transform cursor-pointer group" onclick="window.location.href='Doubt_Bot.html?topic=${topic}'">
+          <span class="material-symbols-outlined text-red-500 text-sm group-hover:animate-bounce">warning</span>
+          <span class="text-xs font-black uppercase tracking-widest text-on-surface">${topic}</span>
+        </div>
+      `).join("");
+    }
+  }
+
+  function setBarValue(subject, mins) {
+    const bar = document.getElementById(subject + "-bar");
+    const countEl = bar?.parentElement?.previousElementSibling?.lastElementChild;
+    
+    if (bar) {
+      // Scale bar relative to 120 mins (2 hours) as a goal
+      bar.style.width = `${Math.min((mins / 120) * 100, 100)}%`;
+    }
+    if (countEl) {
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      countEl.textContent = h > 0 ? `${h}h ${m}m` : `${m} Mins`;
+    }
+  }
+
+  function updateDashboardUIHeader(data) {
     const nameEl = document.querySelector('h1 span');
     if (nameEl) nameEl.textContent = data.name || 'Student';
     
@@ -383,67 +451,11 @@
     }
   }
 
-  async function loadActivityData(uid) {
-    const q = query(collection(db, `scans/${uid}/history`));
-    const querySnapshot = await getDocs(q);
-    const studyMins = { Physics: 0, Chemistry: 0, Maths: 0, Biology: 0 };
-    let totalMins = 0;
-
-    querySnapshot.forEach(doc => {
-      const data = doc.data();
-      // Use duration field, fallback to 5 mins for old scans
-      const duration = data.duration !== undefined ? data.duration : 5;
-      if (studyMins[data.subject] !== undefined) {
-        studyMins[data.subject] += duration;
-        totalMins += duration;
-      }
-    });
-
-    // Update Total Time Chip
-    const totalHours = Math.floor(totalMins / 60);
-    const remainingMins = totalMins % 60;
-    document.getElementById('total-study-time').textContent = `${totalHours}h ${remainingMins}m`;
-
-    // Update bars
-    const barMap = { Physics: 0, Chemistry: 1, Maths: 2, Biology: 3 };
-    Object.keys(studyMins).forEach(sub => {
-      const barIdx = barMap[sub];
-      const bar = document.querySelectorAll('.fill-animate')[barIdx];
-      const countEl = bar.parentElement.previousElementSibling.lastElementChild;
-      
-      const subHours = Math.floor(studyMins[sub] / 60);
-      const subMins = studyMins[sub] % 60;
-      countEl.textContent = subHours > 0 ? `${subHours}h ${subMins}m` : `${subMins} Mins`;
-      
-      // Scale bar relative to 120 mins (2 hours) as a goal
-      bar.style.width = `${Math.min((studyMins[sub] / 120) * 100, 100)}%`;
-    });
-
-    // Weak areas
-    const weakAreasContainer = document.getElementById('weak-areas-container');
-    weakAreasContainer.innerHTML = '';
-    
-    let hasWeakAreas = false;
-    Object.keys(counts).forEach(sub => {
-      if (counts[sub] < 3) {
-        hasWeakAreas = true;
-        const chip = document.createElement('div');
-        chip.className = 'flex items-center gap-3 bg-red-500/10 px-5 py-3 rounded-xl border border-red-500/20 hover:scale-105 transition-transform cursor-pointer group';
-        chip.innerHTML = `<span class="material-symbols-outlined text-red-500 text-sm group-hover:animate-bounce">warning</span><span class="text-xs font-black uppercase tracking-widest text-on-surface">${sub}</span>`;
-        chip.onclick = () => window.location.href = `Doubt_Bot.html?topic=${sub}`;
-        weakAreasContainer.appendChild(chip);
-      }
-    });
-    
-    if (!hasWeakAreas) {
-      weakAreasContainer.innerHTML = '<p class="text-primary text-xs font-black uppercase tracking-widest">Sab changa si! Keep it up. ✨</p>';
-    }
-  }
-
   async function loadRecentActivity(uid) {
     const q = query(collection(db, `scans/${uid}/history`), orderBy("scannedAt", "desc"), limit(5));
     const querySnapshot = await getDocs(q);
     const container = document.getElementById('recent-activity-container');
+    if (!container) return;
     container.innerHTML = '';
     
     if (querySnapshot.empty) {
@@ -472,7 +484,7 @@
   }
 
   function timeAgo(timestamp) {
-    if (!timestamp) return 'Just now';
+    if (!timestamp || !timestamp.toDate) return 'Just now';
     const seconds = Math.floor((new Date() - timestamp.toDate()) / 1000);
     if (seconds < 60) return 'Just now';
     const minutes = Math.floor(seconds / 60);
