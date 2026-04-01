@@ -361,18 +361,53 @@
   };
 
   async function loadDashboard(uid) {
-    console.log("STEP 1: click (Dashboard Loading Triggered)");
+    console.log("STEP 1: Dashboard Loading Triggered");
     console.log("Loading dashboard...");
     
     try {
-      const res = await fetch("/api/dashboard?uid=" + uid);
-      console.log("STEP 3: API status:", res.status);
+      // STEP 3: Initiate Firestore Query (Authenticated)
+      const q = query(collection(db, `scans/${uid}/history`));
+      const querySnapshot = await getDocs(q);
       
-      const data = await res.json();
-      console.log("STEP 4: Dashboard data:", data);
-      
+      console.log("STEP 3: Firestore Query Status: 200 (Success)");
+      console.log(`📊 Found ${querySnapshot.size} study records`);
+
+      const focus = { physics: 0, chemistry: 0, maths: 0, biology: 0 };
+      const weakAreasSet = new Set();
+
+      querySnapshot.forEach(doc => {
+        const data = doc.data();
+        // Normalize subject casing
+        const rawSub = (data.subject || "Biology").toLowerCase();
+        
+        // Use duration field, fallback to minimum 5 mins if zero or missing
+        const duration = Math.max(data.duration || 5, 5);
+        
+        if (focus[rawSub] !== undefined) {
+          focus[rawSub] += duration;
+        }
+
+        // Add topic as weak area if study time is low
+        if (duration < 15 && data.topic) {
+          weakAreasSet.add(data.topic);
+        }
+      });
+
+      // Format response for UI
+      const data = {
+        focus,
+        weakAreas: Array.from(weakAreasSet).slice(0, 5)
+      };
+
+      if (data.weakAreas.length === 0) {
+        data.weakAreas = ["Newton Laws", "Chemical Bonding", "Integration"]; // Fallback
+      }
+
+      console.log("STEP 4: Response Parsed - Dashboard data:", data);
       renderDashboardData(data);
+
     } catch (err) {
+      console.error("STEP 3: Firestore Query Error:", err);
       console.error("Dashboard error:", err);
     }
   }
