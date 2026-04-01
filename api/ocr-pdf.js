@@ -82,11 +82,12 @@ export default async function handler(req, res) {
             1. 📌 Definition (English)
             2. 🧠 Easy Hinglish Explanation
             3. ⚡ Key Points (with **bold keywords**)
-            4. 📊 Example
-            5. 📐 Formula / Equation
-            6. 🎯 Important for Exams
-            7. 🧩 Mnemonic (if possible)
-            8. 🔁 Quick Revision Line`
+            4. 📊 Visuals (Diagram/Flowchart using \`\`\`mermaid or arrows)
+            5. 📈 Example
+            6. 🎨 Formula / Equation
+            7. 🎯 Important for Exams
+            8. 🧩 Mnemonic (if possible)
+            9. 🔁 Quick Revision Line`
           },
           {
             role: "user",
