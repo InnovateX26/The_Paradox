@@ -239,17 +239,27 @@
 </div>
 </div>
 <!-- Persistent Footer Actions (Hidden until data loads) -->
-<div class="p-10 bg-white/5 border-t border-white/5 hidden" id="output-footer">
-<div class="flex flex-wrap gap-4">
-<button class="flex-1 min-w-[160px] bg-white/5 text-primary px-6 py-5 rounded-xl font-headline font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-white/10 transition-all shadow-xl" id="gen-flash-btn">
-<span class="material-symbols-outlined text-xl">style</span>
-                        Flashcards
-                    </button>
-<button class="bg-primary text-dark px-10 py-5 rounded-xl font-headline font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:brightness-110 shadow-2xl" id="listen-btn">
-<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">record_voice_over</span>
-                        Suno (AI Voice)
-                    </button>
-</div>
+<div class="p-10 bg-white/5 border-t border-white/5 hidden flex flex-col gap-6" id="output-footer">
+    <div class="flex items-center justify-between pb-4 border-b border-white/5">
+        <div class="flex items-center gap-3">
+            <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+            </span>
+            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Studying Now: <span id="study-timer">00:00</span></span>
+        </div>
+        <button class="text-on-surface-variant hover:text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 bg-white/5 rounded-lg border border-white/5" id="finish-btn">Finish Session</button>
+    </div>
+    <div class="flex flex-wrap gap-4">
+        <button class="flex-1 min-w-[160px] bg-white/5 text-primary px-6 py-5 rounded-xl font-headline font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-white/10 transition-all shadow-xl" id="gen-flash-btn">
+            <span class="material-symbols-outlined text-xl">style</span>
+            Flashcards
+        </button>
+        <button class="bg-primary text-dark px-10 py-5 rounded-xl font-headline font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:brightness-110 shadow-2xl" id="listen-btn">
+            <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">record_voice_over</span>
+            Suno (AI Voice)
+        </button>
+    </div>
 </div>
 </section>
 </div>
@@ -283,8 +293,11 @@
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
-
+  
   let currentUser = null;
+  let studyStartTime = null;
+  let timerInterval = null;
+  let currentDocId = null;
 
   initAuthGuard(auth);
 
@@ -378,7 +391,7 @@
       });
       const scanData = await scanRes.json();
       
-      displayResult(scanData.explanation, finalCleanText);
+      displayResult(scanData.explanation, finalCleanText, scanData);
 
     } catch (err) {
       console.error(err);
@@ -408,7 +421,19 @@
     alert(msg);
   }
 
-  function displayResult(explanationText, rawText) {
+  function startStudyTimer() {
+    studyStartTime = Date.now();
+    if (timerInterval) clearInterval(timerInterval);
+    
+    timerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - studyStartTime) / 1000);
+        const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+        const secs = (elapsed % 60).toString().padStart(2, '0');
+        document.getElementById('study-timer').textContent = `${mins}:${secs}`;
+    }, 1000);
+  }
+
+  function displayResult(explanationText, rawText, scanData) {
     document.getElementById('loading-state').classList.add('hidden');
     document.getElementById('result-display').classList.remove('hidden');
     document.getElementById('output-footer').classList.remove('hidden');
@@ -426,17 +451,35 @@
     const termsContainer = document.getElementById('key-terms');
     termsContainer.innerHTML = `<p class='text-xs opacity-60'>Analysis complete for your document.</p>`;
 
-    saveToHistory(explanationText, rawText);
+    startStudyTimer();
+    saveToHistory(explanationText, rawText, scanData.subject || "STEM Note");
   }
 
-  async function saveToHistory(explanation, text) {
+  async function saveToHistory(explanation, text, subject) {
     if (!currentUser) return;
-    await addDoc(collection(db, `scans/${currentUser.uid}/history`), {
+    const docRef = await addDoc(collection(db, `scans/${currentUser.uid}/history`), {
       explanation,
       originalText: text,
+      subject: subject,
+      duration: 0, // Initial duration
       scannedAt: serverTimestamp()
     });
+    currentDocId = docRef.id;
   }
+
+  document.getElementById('finish-btn').onclick = async () => {
+    if (!currentDocId) return;
+    const elapsedMins = Math.ceil((Date.now() - studyStartTime) / 60000);
+    
+    // Update the final duration
+    await updateDoc(doc(db, `scans/${currentUser.uid}/history`, currentDocId), {
+        duration: elapsedMins
+    });
+
+    clearInterval(timerInterval);
+    alert(`Studied for ${elapsedMins} minute(s). Dashboard updated!`);
+    window.location.href = 'Dashboard.html';
+  };
 
   // SUNO (Voice) Action
   document.getElementById('listen-btn').onclick = () => {
