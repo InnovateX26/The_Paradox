@@ -202,12 +202,12 @@
 <p class="text-[10px] uppercase font-black tracking-widest text-on-surface-variant">Days Streak</p>
 </div>
 </div>
-<!-- Scan Count Chip -->
+<!-- Total Study Time Chip -->
 <div class="bg-white/5 backdrop-blur-md px-6 py-4 rounded-xl flex items-center gap-3 border border-white/5 shadow-sm hover:bg-white/10 transition-colors cursor-default">
-<span class="material-symbols-outlined text-primary text-3xl">camera_enhance</span>
+<span class="material-symbols-outlined text-secondary text-3xl">timer</span>
 <div>
-<p class="text-2xl font-black text-on-surface counter-up" data-target="0">0</p>
-<p class="text-[10px] uppercase font-black tracking-widest text-on-surface-variant">Weekly Scans</p>
+<p class="text-2xl font-black text-on-surface" id="total-study-time">0h 0m</p>
+<p class="text-[10px] uppercase font-black tracking-widest text-on-surface-variant">Total Study Sessions</p>
 </div>
 </div>
 </div>
@@ -219,8 +219,8 @@
 <!-- Activity Chart -->
 <div class="lg:col-span-2 glass-panel p-8 rounded-2xl reveal-up delay-2 hover-lift">
 <div class="flex justify-between items-center mb-10">
-<h3 class="text-xl font-black font-headline text-on-surface uppercase tracking-tight">Scan Activity</h3>
-<span class="text-[10px] font-black text-primary px-4 py-1 bg-primary/10 rounded-full uppercase tracking-widest cursor-pointer">Last 7 Days</span>
+<h3 class="text-xl font-black font-headline text-on-surface uppercase tracking-tight">Focus Duration</h3>
+<span class="text-[10px] font-black text-primary px-4 py-1 bg-primary/10 rounded-full uppercase tracking-widest cursor-pointer">Study Minutes</span>
 </div>
 <div class="space-y-8">
 <!-- Physics -->
@@ -386,29 +386,37 @@
   async function loadActivityData(uid) {
     const q = query(collection(db, `scans/${uid}/history`));
     const querySnapshot = await getDocs(q);
-    const counts = { Physics: 0, Chemistry: 0, Maths: 0, Biology: 0 };
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const studyMins = { Physics: 0, Chemistry: 0, Maths: 0, Biology: 0 };
+    let totalMins = 0;
 
     querySnapshot.forEach(doc => {
       const data = doc.data();
-      if (counts[data.subject] !== undefined) counts[data.subject]++;
+      // Use duration field, fallback to 5 mins for old scans
+      const duration = data.duration !== undefined ? data.duration : 5;
+      if (studyMins[data.subject] !== undefined) {
+        studyMins[data.subject] += duration;
+        totalMins += duration;
+      }
     });
 
-    const weeklyScansCounter = document.querySelectorAll('.counter-up')[1];
-    if (weeklyScansCounter) {
-      weeklyScansCounter.setAttribute('data-target', querySnapshot.size);
-      animateCounters();
-    }
+    // Update Total Time Chip
+    const totalHours = Math.floor(totalMins / 60);
+    const remainingMins = totalMins % 60;
+    document.getElementById('total-study-time').textContent = `${totalHours}h ${remainingMins}m`;
 
     // Update bars
     const barMap = { Physics: 0, Chemistry: 1, Maths: 2, Biology: 3 };
-    Object.keys(counts).forEach(sub => {
+    Object.keys(studyMins).forEach(sub => {
       const barIdx = barMap[sub];
       const bar = document.querySelectorAll('.fill-animate')[barIdx];
       const countEl = bar.parentElement.previousElementSibling.lastElementChild;
-      countEl.textContent = `${counts[sub]} Scans`;
-      bar.style.width = `${Math.min(counts[sub] * 10, 100)}%`;
+      
+      const subHours = Math.floor(studyMins[sub] / 60);
+      const subMins = studyMins[sub] % 60;
+      countEl.textContent = subHours > 0 ? `${subHours}h ${subMins}m` : `${subMins} Mins`;
+      
+      // Scale bar relative to 120 mins (2 hours) as a goal
+      bar.style.width = `${Math.min((studyMins[sub] / 120) * 100, 100)}%`;
     });
 
     // Weak areas
