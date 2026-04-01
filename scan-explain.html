@@ -279,7 +279,7 @@
 </body><script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
   import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, collection, addDoc, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
   import { initAuthGuard, handleSignOut } from "./js/auth-guard.js";
 
   const firebaseConfig = {
@@ -456,7 +456,14 @@
     termsContainer.innerHTML = `<p class='text-xs opacity-60'>Analysis complete for your document.</p>`;
 
     startStudyTimer();
-    saveToHistory(explanationText, rawText, scanData.subject || "STEM Note");
+    
+    // Fallback and Normalize subject to ensure dashboard matches
+    const subjectList = ['Physics', 'Chemistry', 'Maths', 'Biology'];
+    let rawSub = scanData.subject || "Biology";
+    let finalSubject = rawSub.charAt(0).toUpperCase() + rawSub.slice(1).toLowerCase();
+    if (!subjectList.includes(finalSubject)) finalSubject = "Biology"; 
+
+    saveToHistory(explanationText, rawText, finalSubject);
   }
 
   async function saveToHistory(explanation, text, subject) {
@@ -475,14 +482,21 @@
     if (!currentDocId) return;
     const elapsedMins = Math.ceil((Date.now() - studyStartTime) / 60000);
     
-    // Update the final duration
-    await updateDoc(doc(db, `scans/${currentUser.uid}/history`, currentDocId), {
-        duration: elapsedMins
-    });
+    try {
+        console.log(`📡 Updating duration for ${currentDocId}: ${elapsedMins} mins`);
+        // Update the final duration
+        await updateDoc(doc(db, `scans/${currentUser.uid}/history`, currentDocId), {
+            duration: elapsedMins
+        });
 
-    clearInterval(timerInterval);
-    alert(`Studied for ${elapsedMins} minute(s). Dashboard updated!`);
-    window.location.href = 'Dashboard.html';
+        clearInterval(timerInterval);
+        alert(`Studied for ${elapsedMins} minute(s). Dashboard updated!`);
+        window.location.href = 'Dashboard.html';
+    } catch (err) {
+        console.error("❌ Failed to update duration:", err);
+        alert("Session update failed (database error). Redirecting to dashboard...");
+        window.location.href = 'Dashboard.html';
+    }
   };
 
   // SUNO (Voice) Action
