@@ -124,6 +124,76 @@
         .slide-content {
             animation: message-slide-in-right 0.6s ease-out;
         }
+
+        /* --- PREMIUM AI MESSAGE STYLING --- */
+        .ai-message {
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 24px;
+            margin: 16px 0;
+            border: 1px solid rgba(154, 177, 122, 0.1);
+            border-left: 4px solid #9AB17A;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.3);
+            animation: fadeInPremium 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .ai-message h3 {
+            color: #9AB17A;
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+        }
+
+        .ai-message p {
+            line-height: 1.8;
+            margin-bottom: 14px;
+            font-weight: 500;
+            opacity: 0.9;
+        }
+
+        .ai-message ul {
+            padding-left: 20px;
+            margin-bottom: 16px;
+            list-style-type: none;
+        }
+
+        .ai-message li {
+            position: relative;
+            margin-bottom: 8px;
+            padding-left: 4px;
+            font-weight: 500;
+            opacity: 0.9;
+        }
+
+        .ai-message li::before {
+            content: "•";
+            color: #9AB17A;
+            font-weight: bold;
+            position: absolute;
+            left: -15px;
+        }
+
+        .ai-message pre {
+            background: #0d1117;
+            padding: 16px;
+            border-radius: 12px;
+            overflow-x: auto;
+            font-size: 13px;
+            border: 1px solid rgba(255,255,255,0.05);
+            margin: 15px 0;
+        }
+
+        @keyframes fadeInPremium {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body class="bg-dark-4 font-body text-on-surface selection:bg-primary-container selection:text-on-primary-container">
@@ -277,6 +347,27 @@
     return el;
   };
 
+  // --- PREMIUM RESPONSE FORMATTER ---
+  function formatAIResponse(text) {
+    if (!text) return '';
+    
+    // First pass: Handle titles starting with 📌
+    let formatted = text.replace(/📌 (.*)/g, '<h3>$1</h3>');
+    
+    // Second pass: Handle bullet points starting with •
+    formatted = formatted.replace(/(?:^|\n)• (.*)/g, '<li>$1</li>');
+    
+    // Handle blocks of list items
+    formatted = formatted.replace(/(<li>.*<\/li>(\s*<li>.*<\/li>)*)/g, '<ul>$1</ul>');
+    
+    // Final pass: Handle normal paragraphs (double newlines)
+    const paragraphs = formatted.split('\n\n');
+    return paragraphs.map(p => {
+        if (p.includes('<h3') || p.includes('<ul')) return p;
+        return `<p>${p.trim().replace(/\n/g, '<br>')}</p>`;
+    }).join('');
+  }
+
   initAuthGuard(auth);
   
   const logoutBtns = ['sign-out-btn', 'sidebar-logout-btn'];
@@ -359,27 +450,34 @@
   function appendMessageUI(msg) {
     const container = document.getElementById('chat-container');
     const isUser = msg.role === 'user';
-    const html = isUser ? `
-      <div class="flex flex-col items-end gap-2 max-w-2xl ml-auto animate-message-right">
-        <div class="bg-primary text-dark px-8 py-5 rounded-2xl rounded-tr-none shadow-xl font-medium">
-          <p class="text-sm leading-relaxed">${msg.content}</p>
+    
+    if (isUser) {
+      const html = `
+        <div class="flex flex-col items-end gap-2 max-w-2xl ml-auto animate-message-right">
+          <div class="bg-primary text-dark px-8 py-5 rounded-2xl rounded-tr-none shadow-xl font-medium">
+            <p class="text-sm leading-relaxed">${msg.content}</p>
+          </div>
+          <span class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 mr-2">${timeAgo(msg.timestamp)}</span>
         </div>
-        <span class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 mr-2">${timeAgo(msg.timestamp)}</span>
-      </div>
-    ` : `
-      <div class="flex flex-col items-start gap-5 max-w-3xl animate-message-left">
+      `;
+      container.insertAdjacentHTML('beforeend', html);
+    } else {
+      // AI MESSAGE RENDERING (Premium Format)
+      const aiDiv = document.createElement('div');
+      aiDiv.className = "flex flex-col items-start gap-5 max-w-3xl animate-message-left";
+      aiDiv.innerHTML = `
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border border-white/5">
             <span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
           </div>
           <span class="text-[10px] font-black uppercase tracking-widest text-primary">Lab Assistant</span>
         </div>
-        <div class="bot-bubble-glass p-8 rounded-2xl rounded-tl-none prose prose-invert max-w-none">
-          <div class="text-on-surface leading-relaxed text-sm ai-reply-content">${marked.parse(msg.content)}</div>
+        <div class="ai-message text-on-surface">
+          ${formatAIResponse(msg.content)}
         </div>
-      </div>
-    `;
-    container.insertAdjacentHTML('beforeend', html);
+      `;
+      container.appendChild(aiDiv);
+    }
   }
 
   // --- Quick Replies ---
