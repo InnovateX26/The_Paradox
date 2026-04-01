@@ -8,6 +8,20 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Playfair+Display:ital,wght@1,700;1,900&amp;display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: false, 
+            theme: 'dark',
+            securityLevel: 'loose',
+            themeVariables: {
+                primaryColor: '#9AB17A',
+                primaryTextColor: '#FBE8CE',
+                secondaryColor: '#232b14',
+                tertiaryColor: '#1e2511'
+            }
+        });
+    </script>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -347,27 +361,24 @@
     return el;
   };
 
-  // --- PREMIUM RESPONSE FORMATTER ---
+  // --- PREMIUM RESPONSE FORMATTER (v3 Hybrid) ---
   function formatAIResponse(text) {
     if (!text) return '';
     
-    // First pass: Handle titles starting with specialized emojis (Using Unicode escapes for safety)
-    // Matches: [Emoji] [Optional **] Title [Optional **] [Optional :]
-    const emojiHeaderRegex = /([\u{1F4CC}\u{1F9E0}\u{26A1}\u{1F4CA}\u{1F4D0}\u{1F3AF}\u{1F501}\u{1F9E9}]) (?:\*\*)?([^:\n*]+)(?:\*\*)?:?/gu;
-    let formatted = text.replace(emojiHeaderRegex, '<h3>$1 $2</h3>');
+    // 1. Initial Cleanup: Ensure no stray characters break the rendering
+    let cleanText = text.trim();
+
+    // 2. Handle 📌, 🧠, ⚡, 📊, 📐, 🎯, 🔁, 🧩 as headers
+    // Using a broad emoji-aware regex: Match any emoji followed by a space and a title
+    const emojiHeaderRegex = /^([\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}])\s*(.*)$/gm;
     
-    // Second pass: Handle bullet points starting with •
-    formatted = formatted.replace(/(?:^|\n)• (.*)/g, '<li>$1</li>');
-    
-    // Handle blocks of list items
-    formatted = formatted.replace(/(<li>.*<\/li>(\s*<li>.*<\/li>)*)/g, '<ul>$1</ul>');
-    
-    // Final pass: Handle normal paragraphs (double newlines)
-    const paragraphs = formatted.split('\n\n');
-    return paragraphs.map(p => {
-        if (p.includes('<h3') || p.includes('<ul')) return p;
-        return `<p>${p.trim().replace(/\n/g, '<br>')}</p>`;
-    }).join('');
+    // We replace headers first, but we leave the content inside headers as markdown-ready
+    let formatted = cleanText.replace(emojiHeaderRegex, (match, emoji, title) => {
+        return `<h3 class="flex items-center gap-2 text-primary font-black uppercase text-xs tracking-widest mt-8 mb-4 border-l-2 border-primary/20 pl-4">${emoji} ${title.replace(/\*/g, '')}</h3>`;
+    });
+
+    // 3. Let Marked handle the rest (bold, links, code blocks, etc.)
+    return marked.parse(formatted);
   }
 
   initAuthGuard(auth);
@@ -449,7 +460,7 @@
     loadSessions(currentUser.uid);
   }
 
-  function appendMessageUI(msg) {
+  async function appendMessageUI(msg) {
     const container = document.getElementById('chat-container');
     const isUser = msg.role === 'user';
     
@@ -474,12 +485,20 @@
           </div>
           <span class="text-[10px] font-black uppercase tracking-widest text-primary">Lab Assistant</span>
         </div>
-        <div class="ai-message text-on-surface">
+        <div class="ai-message text-on-surface w-full">
           ${formatAIResponse(msg.content)}
         </div>
       `;
       container.appendChild(aiDiv);
+
+      // Trigger Mermaid Rendering for any new diagrams
+      try {
+        await mermaid.run();
+      } catch (e) {
+        console.error("Mermaid Render Error:", e);
+      }
     }
+    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
   }
 
   // --- Quick Replies ---
