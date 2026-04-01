@@ -32,17 +32,33 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "system",
-            content: "You are a helpful academic assistant that generates educational flashcards in simple Hinglish when helpful. Format your output strictly using 'Q: question' and 'A: answer'."
+            content: `You are a specialized STEM flashcard generator. 
+            Generate high-quality, exam-focused flashcards in Indian English/Hinglish when helpful.
+            
+            OUTPUT RULES:
+            1. Return ONLY valid JSON.
+            2. Each card must have: "question", "answer", and "revision" (a 1-line quick concept tip).
+            3. Ensure proper spacing between words.
+            4. No messy formatting or merged text.
+            
+            FORMAT:
+            {
+              "flashcards": [
+                {
+                  "question": "...",
+                  "answer": "...",
+                  "revision": "..."
+                }
+              ]
+            }`
           },
           {
             role: "user",
-            content: `Generate 5–8 high-quality flashcards for ${topic}.
-            Format:
-            Q: question
-            A: answer`
+            content: `Generate 5-8 flashcards for the topic: ${topic}.`
           }
         ],
-        max_tokens: 1000
+        response_format: { type: "json_object" },
+        max_tokens: 1500
       })
     });
 
@@ -52,24 +68,20 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
-    const rawText = data.choices?.[0]?.message?.content || "";
+    let result;
     
-    // Parse the Q: A: format into objects
-    const flashcards = [];
-    const blocks = rawText.split(/Q:/i).filter(Boolean);
-    
-    blocks.forEach(block => {
-      const parts = block.split(/A:/i);
-      if (parts.length === 2) {
-        flashcards.push({
-          question: parts[0].trim(),
-          answer: parts[1].trim()
-        });
-      }
-    });
+    try {
+        // Look for JSON in the content (OpenRouter gpt-4o-mini usually respects response_format)
+        const content = data.choices?.[0]?.message?.content || "{}";
+        result = JSON.parse(content);
+    } catch (parseErr) {
+        console.error("❌ JSON Parse Error:", parseErr);
+        throw new Error("AI output was not in a valid JSON format.");
+    }
 
+    const flashcards = result.flashcards || [];
     if (flashcards.length === 0) {
-        throw new Error("AI output could not be parsed into flashcards.");
+        throw new Error("No flashcards found in AI response.");
     }
 
     res.status(200).json({ flashcards });
