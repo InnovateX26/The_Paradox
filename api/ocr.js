@@ -1,3 +1,11 @@
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+  },
+};
+
 export default async function handler(req, res) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -7,26 +15,64 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { text } = req.body;
-  if (!text || typeof text !== 'string') {
-    return res.status(400).json({ error: 'Text input is required and must be a string' });
-  }
+  const { text, image } = req.body;
 
   try {
-    // 1. Basic cleaning: remove extra whitespace, trim, normalize
-    const cleanedText = text
-      .trim()
-      .replace(/[ \t]+/g, ' ') // Replace multiple spaces/tabs with a single space
-      .replace(/\r/g, '')      // Remove carriage returns
-      .replace(/\n{3,}/g, '\n\n'); // Normalize multiple newlines to max 2
+    let resultText = "";
 
-    // 2. Return processed text
+    // CASE 1: Image provided (Vision OCR)
+    if (image) {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://stemvi.vercel.app",
+          "X-Title": "StemVI Quick OCR"
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-4o-mini",
+          max_tokens: 1000,
+          messages: [{
+            role: "user",
+            content: [
+              {
+                type: "image_url",
+                image_url: { url: `data:image/jpeg;base64,${image}` }
+              },
+              {
+                type: "text",
+                text: "Extract all text from this image. Output only the extracted text."
+              }
+            ]
+          }]
+        })
+      });
+      const data = await response.json();
+      resultText = data.choices?.[0]?.message?.content || "";
+    } 
+    // CASE 2: Raw text provided (Cleaning only)
+    else if (text) {
+      resultText = text;
+    } 
+    else {
+      return res.status(400).json({ error: 'Either text or image is required' });
+    }
+
+    // Cleaning Phase
+    const cleanedText = resultText
+      .trim()
+      .replace(/[ \t]+/g, ' ')
+      .replace(/\r/g, '')
+      .replace(/\n{3,}/g, '\n\n');
+
     res.status(200).json({
-      cleanedText: cleanedText
+      text: cleanedText,
+      cleanedText: cleanedText // Legacy compatibility
     });
 
   } catch (err) {
     console.error('OCR Handler Error:', err);
-    res.status(500).json({ error: 'Internal Server Error', details: err.message });
+    res.status(500).json({ error: 'OCR Processing Failed', details: err.message });
   }
 }
