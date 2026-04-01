@@ -155,6 +155,7 @@
 </div>
 <p class="font-headline font-black text-2xl text-on-surface mb-3 text-center uppercase tracking-tighter">Drop your notes or tap</p>
 <p class="text-on-surface-variant/40 text-[10px] font-black uppercase tracking-widest text-center">Supports PDF, PNG, JPG (MAX 10MB)</p>
+<input type="file" id="imageInput" accept="image/*,application/pdf" class="hidden" />
 </div>
 <!-- Camera Action -->
 <button class="w-full max-w-md bg-primary text-dark flex items-center justify-center gap-6 py-7 rounded-2xl shadow-2xl hover:brightness-110 hover:scale-[1.02] transition-all duration-500 active:scale-95 group/btn overflow-hidden relative">
@@ -318,18 +319,29 @@
     }
   };
 
-  // --- OCR Processing Logic ---
+  // --- SENIOR FIX: Robust OCR Pipeline ---
   const uploadZone = document.getElementById('upload-zone');
-  const fileInput = document.getElementById('file-input');
+  const imageInput = document.getElementById('imageInput');
 
-  uploadZone.onclick = () => fileInput.click();
+  if (uploadZone && imageInput) {
+    uploadZone.addEventListener('click', () => {
+      console.log("STEP 1: click (Upload Zone)");
+      imageInput.click();
+    });
 
-  fileInput.onchange = (e) => {
-    const file = e.target.files[0];
-    if (file) processFile(file);
-  };
+    imageInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) {
+        console.error("No file selected");
+        return;
+      }
+      console.log("STEP 2: file selected:", file.name);
+      await processFile(file);
+    });
+  }
 
   async function processFile(file) {
+    console.log("STEP 3: API Pipeline Initiation");
     showLoadingState();
     const isPDF = file.type === 'application/pdf';
     
@@ -362,26 +374,18 @@
         extractedText = ocrData.extractedText || "";
       } else {
         const base64 = await fileToBase64(file);
-        // We reuse ocr-pdf logic for consistency or just a direct vision call
-        const response = await fetch('/api/ocr-pdf', {
+        const response = await fetch('/api/ocr', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pages: [{ pageNumber: 1, base64 }] })
+          body: JSON.stringify({ image: base64 })
         });
         const data = await response.json();
-        extractedText = data.extractedText || "";
+        extractedText = data.text || "";
       }
 
       if (!extractedText) throw new Error("Could not read any text from the file.");
 
-      // Step 2: Clean Text via our new /api/ocr
-      const cleanRes = await fetch('/api/ocr', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: extractedText })
-      });
-      const cleanData = await cleanRes.json();
-      const finalCleanText = cleanData.cleanedText;
+      const finalCleanText = extractedText;
 
       // Step 3: Explain via /api/scan
       const scanRes = await fetch('/api/scan', {
@@ -390,7 +394,7 @@
         body: JSON.stringify({ text: finalCleanText })
       });
       const scanData = await scanRes.json();
-      
+      console.log("STEP 4: Response Received & Parsed");
       displayResult(scanData.explanation, finalCleanText, scanData);
 
     } catch (err) {
