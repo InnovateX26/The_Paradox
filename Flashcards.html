@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Playfair+Display:ital,wght@1,700;1,900&amp;display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -93,6 +94,12 @@
     </style>
 </head>
 <body class="bg-surface font-body text-on-surface">
+    <!-- Live Server Warning Banner -->
+    <div id="live-server-warning" class="hidden fixed top-0 left-0 w-full bg-red-600 text-white py-2 px-4 z-[9999] text-center font-bold flex items-center justify-center gap-3">
+        <span class="material-symbols-outlined">warning</span>
+        <span>Stop! You are on Live Server (Port 5500). Flashcards will NOT work. Please run <code class="bg-black/20 px-2 py-1 rounded">vercel dev</code> instead.</span>
+    </div>
+
     <!-- TopNavBar -->
     <header class="fixed top-0 left-0 w-full z-50 bg-[#1e2511]/60 backdrop-blur-3xl border-b border-white/10">
         <nav class="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
@@ -227,7 +234,7 @@ ain>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
         import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
         import { initAuthGuard, handleSignOut } from "./js/auth-guard.js";
 
         const firebaseConfig = {
@@ -266,6 +273,12 @@ ain>
                 document.getElementById('user-email-display').textContent = user.email || 'authenticated user';
                 document.getElementById('user-avatar-initial').textContent = (userData.name || 'S').charAt(0).toUpperCase();
             }
+
+            // Port 5500 Check
+            if (window.location.port === '5500') {
+                console.warn("⚠️ [DEBUG] Live Server detected. Flashcards will fail.");
+                document.getElementById('live-server-warning').classList.remove('hidden');
+            }
         };
 
         async function loadFlashcards() {
@@ -303,9 +316,10 @@ ain>
         }
 
         function renderCard() {
+            if (flashcards.length === 0) return;
             const card = flashcards[currentIndex];
-            document.getElementById('card-question').textContent = card.question;
-            document.getElementById('card-answer').textContent = card.answer;
+            document.getElementById('card-question').innerHTML = marked.parse(card.question);
+            document.getElementById('card-answer').innerHTML = marked.parse(card.answer);
             document.getElementById('card-subject').textContent = card.subject || 'STEM';
             document.getElementById('card-progress').textContent = `${currentIndex + 1} / ${flashcards.length}`;
             document.getElementById('main-card').classList.remove('flipped');
@@ -331,8 +345,20 @@ ain>
 
         // --- AI Generation Logic ---
         document.getElementById('gen-btn').onclick = async () => {
-            const topic = document.getElementById('topic-input').value.trim();
-            if (!topic) return;
+            const topicInput = document.getElementById('topic-input');
+            const topic = topicInput.value.trim();
+            
+            console.log("🚀 [DEBUG] Build Clicked. Topic:", topic);
+            
+            if (!topic) {
+                alert("Please enter a topic first!");
+                return;
+            }
+            
+            if (!currentUser) {
+                alert("Please wait for auth to initialize.");
+                return;
+            }
             
             const btn = document.getElementById('gen-btn');
             const originalText = btn.innerHTML;
@@ -340,6 +366,7 @@ ain>
             btn.disabled = true;
 
             try {
+                console.log("📡 [DEBUG] Fetching cards for:", topic);
                 const response = await fetch("/api/exam", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -347,24 +374,31 @@ ain>
                 });
                 
                 const data = await response.json();
-                if (data.error) throw new Error(data.error);
+                console.log("📥 [DEBUG] Received Data:", data);
+                
+                if (data.error) throw new Error(data.error + (data.details ? ": " + data.details : ""));
 
                 const cards = data.flashcards;
+                if (!cards || cards.length === 0) throw new Error("No cards returned from AI.");
+                
+                console.log(`🔥 [DEBUG] Saving ${cards.length} cards to Firebase...`);
                 
                 for (const c of cards) {
                     await addDoc(collection(db, `flashcards/${currentUser.uid}/cards`), { 
                         question: c.question,
                         answer: c.answer,
-                        subject: topic, // Use topic as subject for categorization
+                        subject: topic,
                         createdAt: serverTimestamp() 
                     });
                 }
                 
-                document.getElementById('topic-input').value = '';
-                loadFlashcards();
+                console.log("✅ [DEBUG] All cards saved successfully.");
+                topicInput.value = '';
+                await loadFlashcards();
+                
             } catch (err) {
-                console.error("Flashcard Gen Error:", err);
-                alert("Generation failed. Please try a different topic.");
+                console.error("❌ [DEBUG] Flashcard Gen Error:", err);
+                alert(`Generation failed: ${err.message}`);
             } finally {
                 btn.innerHTML = originalText;
                 btn.disabled = false;

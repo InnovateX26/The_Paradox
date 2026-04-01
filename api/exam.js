@@ -13,38 +13,46 @@ export default async function handler(req, res) {
   }
 
   try {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      console.error("❌ ERROR: OPENROUTER_API_KEY is missing from environment.");
+      return res.status(500).json({ error: "Backend Config Error: API Key not found in .env" });
+    }
+
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
         "HTTP-Referer": "https://stemvi.vercel.app",
-        "X-Title": "STEMVI Exam Tool"
+        "X-Title": "STEMVI Flashcards Tool"
       },
       body: JSON.stringify({
         model: "openai/gpt-4o-mini",
         messages: [
           {
             role: "system",
-            content: "You are a helpful academic assistant that generates educational flashcards."
+            content: "You are a helpful academic assistant that generates educational flashcards in simple Hinglish when helpful. Format your output strictly using 'Q: question' and 'A: answer'."
           },
           {
             role: "user",
-            content: `Generate 5–10 high-quality flashcards for ${topic}.
+            content: `Generate 5–8 high-quality flashcards for ${topic}.
             Format:
             Q: question
-            A: answer
-            Keep answers short, clear, and exam-focused.`
+            A: answer`
           }
         ],
         max_tokens: 1000
       })
     });
 
-    const data = await response.json();
-    if (data.error) throw new Error(data.error.message || 'OpenRouter API Error');
+    if (!response.ok) {
+        const errorData = await response.text();
+        return res.status(response.status).json({ error: "AI Provider Error", details: errorData });
+    }
 
-    const rawText = data.choices[0].message.content;
+    const data = await response.json();
+    const rawText = data.choices?.[0]?.message?.content || "";
     
     // Parse the Q: A: format into objects
     const flashcards = [];
@@ -59,6 +67,10 @@ export default async function handler(req, res) {
         });
       }
     });
+
+    if (flashcards.length === 0) {
+        throw new Error("AI output could not be parsed into flashcards.");
+    }
 
     res.status(200).json({ flashcards });
 
