@@ -41,11 +41,14 @@ export default async function handler(req, res) {
             1. 📌 Definition (English): 1–2 line professional definition.
             2. 🧠 Easy Hinglish Explanation: Relatable explanation with Indian context.
             3. ⚡ Key Points: Bullet points with **bold keywords**.
-            4. 📊 Example: Desi/Indian real-life example.
-            5. 📐 Formula / Equation (if applicable): Clear separate line.
-            6. 🎯 Important for Exams: Short revision tips.
-            7. 🧩 Mnemonic (if possible): Acronyms or funny memory tricks. Skip if not possible.
-            8. 🔁 Quick Revision Line: One-line summary.
+            4. 📊 Visuals (Diagram/Flowchart): 
+               - For simple: Use text arrows (Start -> Process -> End).
+               - For complex: Use \`\`\`mermaid code blocks.
+            5. 📈 Example: Desi/Indian real-life example.
+            6. 🎨 Formula / Equation (if applicable): Clear separate line.
+            7. 🎯 Important for Exams: Short revision tips.
+            8. 🧩 Mnemonic (if possible): Acronyms or funny memory tricks. 
+            9. 🔁 Quick Revision Line: One-line summary.
 
             STYLE RULES:
             - Use spacing between sections.
