@@ -351,8 +351,10 @@
   function formatAIResponse(text) {
     if (!text) return '';
     
-    // First pass: Handle titles starting with 📌
-    let formatted = text.replace(/📌 (.*)/g, '<h3>$1</h3>');
+    // First pass: Handle titles starting with specialized emojis (Using Unicode escapes for safety)
+    // Matches: [Emoji] [Optional **] Title [Optional **] [Optional :]
+    const emojiHeaderRegex = /([\u{1F4CC}\u{1F9E0}\u{26A1}\u{1F4CA}\u{1F4D0}\u{1F3AF}\u{1F501}\u{1F9E9}]) (?:\*\*)?([^:\n*]+)(?:\*\*)?:?/gu;
+    let formatted = text.replace(emojiHeaderRegex, '<h3>$1 $2</h3>');
     
     // Second pass: Handle bullet points starting with •
     formatted = formatted.replace(/(?:^|\n)• (.*)/g, '<li>$1</li>');
