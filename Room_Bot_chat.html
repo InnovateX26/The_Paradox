@@ -102,18 +102,31 @@
 <div class="flex h-screen pt-20 pb-0 md:pb-0 overflow-hidden">
 <!-- SideNavBar / Sidebar -->
 <aside class="hidden lg:flex flex-col h-full w-72 p-6 space-y-6 bg-dark-2/80 backdrop-blur-2xl border-r border-white/5">
-<div class="px-2 py-4">
-<h2 class="font-headline text-xl font-black text-primary tracking-tighter uppercase">Active Rooms</h2>
-<p class="text-[10px] text-on-surface-variant font-black uppercase tracking-widest mt-1">Live Lab Sessions</p>
+<div class="flex-1 overflow-y-auto space-y-6 custom-scrollbar" id="sidebar-content">
+    <div id="rooms-section">
+        <div class="px-2 mb-2">
+            <h2 class="font-headline text-[10px] font-black text-primary tracking-widest uppercase opacity-60">Active Rooms</h2>
+        </div>
+        <div class="space-y-3" id="rooms-container">
+            <!-- Room Items Dynamic -->
+            <p class="text-on-surface-variant text-[10px] italic p-4 text-center">Loading rooms...</p>
+        </div>
+    </div>
+
+    <div id="users-section" class="pt-6 border-t border-white/5 hidden">
+        <div class="px-2 mb-2">
+            <h2 class="font-headline text-[10px] font-black text-primary tracking-widest uppercase opacity-60">Online Researchers</h2>
+        </div>
+        <div class="space-y-3" id="users-container">
+            <!-- Online Users Dynamic -->
+        </div>
+    </div>
 </div>
-<div class="flex-1 overflow-y-auto space-y-4 custom-scrollbar" id="rooms-container">
-<!-- Room Items Dynamic -->
-<p class="text-on-surface-variant text-xs italic p-4 text-center">Loading rooms...</p>
-</div>
-<button class="w-full py-4 bg-primary text-dark rounded-xl font-headline font-black uppercase tracking-widest text-[10px] shadow-lg btn-hover-scale flex items-center justify-center gap-2" onclick="createRoom()">
-<span class="material-symbols-outlined text-sm">add</span>
-            New Room
-        </button>
+
+<button class="w-full py-4 bg-primary text-dark rounded-xl font-headline font-black uppercase tracking-widest text-[10px] shadow-lg btn-hover-scale flex items-center justify-center gap-2" onclick="handleNewRoom()">
+    <span class="material-symbols-outlined text-sm">add</span>
+    New Room
+</button>
 <div class="mt-auto p-4 bg-white/5 rounded-2xl border border-white/5 flex flex-col gap-4">
     <div class="flex items-center gap-3 px-2">
         <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-dark font-black tracking-tighter shadow-lg shadow-primary/20 shrink-0" id="user-avatar-initial">
@@ -157,10 +170,15 @@
                 Exam ke liye kya important hai?
             </button>
         </div>
-        <!-- Input Bar -->
-        <div class="flex items-center gap-4 bg-dark-2 rounded-2xl p-2.5 pl-6 border border-white/5 shadow-2xl focus-within:border-primary/30 transition-all">
+        <!-- Typing Indicator -->
+        <div id="typing-indicator" class="hidden absolute -top-8 left-8 flex items-center gap-2 text-[10px] font-black text-primary/60 uppercase tracking-widest animate-pulse">
+            <span class="material-symbols-outlined text-sm">rocket_launch</span>
+            AI is thinking...
+        </div>
+
+        <div class="flex items-center gap-4 bg-dark-2 rounded-2xl p-2.5 pl-6 border border-white/5 shadow-2xl focus-within:border-primary/30 transition-all relative">
             <button class="material-symbols-outlined text-on-surface-variant/40 hover:text-primary transition-colors">mic</button>
-            <input class="flex-1 bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface-variant/20 py-4 text-sm font-medium" placeholder="Share your insights with the room..." type="text" id="user-input"/>
+            <input class="flex-1 bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface-variant/20 py-4 text-sm font-medium" placeholder="Mention @bot for AI help or chat with friends..." type="text" id="user-input"/>
             <button class="w-12 h-12 rounded-xl bg-primary text-dark flex items-center justify-center shadow-lg hover:brightness-110 active:scale-95 transition-all" id="send-btn">
                 <span class="material-symbols-outlined font-black">arrow_forward</span>
             </button>
@@ -286,18 +304,56 @@
     });
   }
 
-  window.createRoom = async () => {
+  window.handleNewRoom = async () => {
     const topic = prompt("Enter Study Topic:", "Physics Revision");
     if (!topic) return;
-    const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
-    await setDoc(doc(db, "rooms", roomId), {
-      createdBy: currentUser.uid,
-      createdAt: serverTimestamp(),
-      activeUsers: [currentUser.uid],
-      topic: topic
-    });
-    window.location.href = `Room_Bot_chat.html?room=${roomId}`;
+
+    try {
+      const response = await fetch('/api/room', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'create', userId: currentUser.uid, topic })
+      });
+      const data = await response.json();
+      if (data.success) {
+        await setDoc(doc(db, "rooms", data.roomId), {
+          createdBy: currentUser.uid,
+          createdAt: serverTimestamp(),
+          activeUsers: [currentUser.uid],
+          topic: topic
+        });
+        window.location.href = `Room_Bot_chat.html?room=${data.roomId}`;
+      }
+    } catch (err) {
+      console.error("Room API Error:", err);
+    }
   };
+
+  async function listenToUsers(roomId) {
+    const userSection = document.getElementById('users-section');
+    const userContainer = document.getElementById('users-container');
+    if (!userSection || !userContainer) return;
+
+    const q = doc(db, "rooms", roomId);
+    onSnapshot(q, async (snap) => {
+      if (snap.exists()) {
+        userSection.classList.remove('hidden');
+        userContainer.innerHTML = '';
+        const userIds = snap.data().activeUsers || [];
+        for (const uid of userIds) {
+          const uSnap = await getDoc(doc(db, "users", uid));
+          const uData = uSnap.exists() ? uSnap.data() : { name: 'Unknown' };
+          userContainer.insertAdjacentHTML('beforeend', `
+            <div class="flex items-center gap-3 px-3 py-2 bg-white/5 rounded-xl border border-white/5">
+              <div class="w-6 h-6 rounded-lg bg-primary/20 flex items-center justify-center text-[8px] font-black text-primary">${uData.name.charAt(0).toUpperCase()}</div>
+              <span class="text-[10px] font-bold text-on-surface-variant truncate">${uData.name}</span>
+              <div class="ms-auto w-1 h-1 bg-green-500 rounded-full animate-pulse"></div>
+            </div>
+          `);
+        }
+      }
+    });
+  }
 
   async function joinRoom(roomId) {
     currentRoomId = roomId;
@@ -316,6 +372,8 @@
     await updateDoc(doc(db, "users", currentUser.uid), {
       lastActiveRoom: roomId
     });
+
+    listenToUsers(roomId);
 
     const q = query(collection(db, `rooms/${roomId}/messages`), orderBy("timestamp", "asc"));
     onSnapshot(q, (snapshot) => {
@@ -403,27 +461,22 @@
   }
 
   async function handleBotResponse(text) {
+    const indicator = document.getElementById('typing-indicator');
     try {
-      const response = await fetch("/api/chat", {
+      if (indicator) indicator.classList.remove('hidden');
+
+      const response = await fetch("/api/chat-room", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "openai/gpt-4o-mini",
-          messages: [
-            { 
-              role: "system", 
-              content: `You are StemVI Room-Bot, an expert academic mentor. 
-              The current room topic is: ${currentRoomTopic}. 
-              You are participating in a group study session. 
-              Explain concepts in Hinglish concisely. Focus on the topic! 🎯` 
-            },
-            { role: "user", content: text }
-          ]
+          topic: currentRoomTopic,
+          message: text,
+          // Optimization: could pass chat history here
         })
       });
 
       const data = await response.json();
-      const botText = data.reply || data.message || "I'm having trouble thinking right now...";
+      const botText = data.reply || "Thinking mode offline. 🧪";
 
       await addDoc(collection(db, `rooms/${currentRoomId}/messages`), {
         senderId: 'system-ai',
@@ -433,6 +486,8 @@
       });
     } catch (err) {
       console.error("AI Error:", err);
+    } finally {
+      if (indicator) indicator.classList.add('hidden');
     }
   }
 
