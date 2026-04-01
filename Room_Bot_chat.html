@@ -123,10 +123,15 @@
     </div>
 </div>
 
-<button class="w-full py-4 bg-primary text-dark rounded-xl font-headline font-black uppercase tracking-widest text-[10px] shadow-lg btn-hover-scale flex items-center justify-center gap-2" onclick="createRoom()">
-    <span class="material-symbols-outlined text-sm">add</span>
-    New Room
-</button>
+<div class="flex gap-2">
+    <button class="flex-1 py-4 bg-primary text-dark rounded-xl font-headline font-black uppercase tracking-widest text-[10px] shadow-lg btn-hover-scale flex items-center justify-center gap-2" onclick="createRoom()">
+        <span class="material-symbols-outlined text-sm">add</span>
+        New Room
+    </button>
+    <button class="w-12 h-12 bg-white/5 text-primary rounded-xl border border-white/5 flex items-center justify-center shadow-lg btn-hover-scale" onclick="joinByCode()" title="Join by ID">
+        <span class="material-symbols-outlined">key</span>
+    </button>
+</div>
 <div class="mt-auto p-4 bg-white/5 rounded-2xl border border-white/5 flex flex-col gap-4">
     <div class="flex items-center gap-3 px-2">
         <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-dark font-black tracking-tighter shadow-lg shadow-primary/20 shrink-0" id="user-avatar-initial">
@@ -178,8 +183,8 @@
 
         <div class="flex items-center gap-4 bg-dark-2 rounded-2xl p-2.5 pl-6 border border-white/5 shadow-2xl focus-within:border-primary/30 transition-all relative">
             <button class="material-symbols-outlined text-on-surface-variant/40 hover:text-primary transition-colors">mic</button>
-            <input class="flex-1 bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface-variant/20 py-4 text-sm font-medium" placeholder="Mention @bot for AI help or chat with friends..." type="text" id="user-input"/>
-            <button class="w-12 h-12 rounded-xl bg-primary text-dark flex items-center justify-center shadow-lg hover:brightness-110 active:scale-95 transition-all" id="send-btn">
+            <input class="flex-1 bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface-variant/20 py-4 text-sm font-medium" placeholder="Mention @bot for AI help or chat with friends..." type="text" id="messageInput"/>
+            <button class="w-12 h-12 rounded-xl bg-primary text-dark flex items-center justify-center shadow-lg hover:brightness-110 active:scale-95 transition-all" id="send-btn" onclick="sendMessage()">
                 <span class="material-symbols-outlined font-black">arrow_forward</span>
             </button>
         </div>
@@ -263,18 +268,22 @@
       if (lastRoom) {
         window.location.href = `Room_Bot_chat.html?room=${lastRoom}`;
       } else {
-        const newCode = `${Math.floor(100 + Math.random() * 900)}-${Math.floor(100 + Math.random() * 900)}`;
-        await setDoc(doc(db, "rooms", newCode), {
-          createdBy: user.uid,
-          createdAt: serverTimestamp(),
-          activeUsers: [user.uid],
-          topic: "Study Session"
-        });
-        await updateDoc(doc(db, "users", user.uid), { lastActiveRoom: newCode });
-        window.location.href = `Room_Bot_chat.html?room=${newCode}`;
+        // Find latest public room or create new
+        const roomsQ = query(collection(db, "rooms"), orderBy("createdAt", "desc"), limit(1));
+        const roomsSnap = await getDocs(roomsQ);
+        if (!roomsSnap.empty) {
+          window.location.href = `Room_Bot_chat.html?room=${roomsSnap.docs[0].id}`;
+        } else {
+          createRoom("Study Session", true); // Auto-create first room
+        }
       }
     }
   };
+
+  window.joinByCode = async () => {
+    const code = prompt("Enter 6-digit Room ID (e.g. 123-456):");
+    if (code) window.location.href = `Room_Bot_chat.html?room=${code}`;
+  }
 
   async function loadRooms() {
     const q = query(collection(db, "rooms"), orderBy("createdAt", "desc"), limit(10));
@@ -304,9 +313,9 @@
     });
   }
 
-  window.createRoom = async () => {
+  window.createRoom = async (defaultTopic = null, autoJoin = false) => {
     console.log("🖱️ [DEBUG] Button clicked: createRoom");
-    const topic = prompt("Enter Study Topic:", "Physics Revision");
+    const topic = defaultTopic || prompt("Enter Study Topic:", "Physics Revision");
     if (!topic) return;
 
     try {
@@ -328,14 +337,14 @@
           topic: data.topic
         });
         
-        alert("Success! Room Created: " + data.roomId);
+        if (!autoJoin) alert("Success! Room Created: " + data.roomId);
         window.location.href = `Room_Bot_chat.html?room=${data.roomId}`;
       } else {
         throw new Error(data.error || "Room creation failed on server");
       }
     } catch (err) {
       console.error("❌ [DEBUG] Error:", err);
-      alert("Room creation failed: " + err.message);
+      if (!autoJoin) alert("Room creation failed: " + err.message);
     }
   };
 
@@ -443,7 +452,7 @@
   document.querySelectorAll('.btn-hover-scale').forEach(btn => {
     if (btn.id === 'next-btn' || btn.id === 'prev-btn' || btn.tagName === 'INPUT') return;
     btn.onclick = () => {
-      const input = document.getElementById('user-input');
+      const input = document.getElementById('messageInput');
       if (input) {
         input.value = btn.innerText;
         sendMessage();
@@ -451,27 +460,59 @@
     };
   });
 
-  async function sendMessage() {
-    const input = document.getElementById('user-input');
-    const content = input.value.trim();
-    if (!content || !currentRoomId) return;
+  window.sendMessage = async () => {
+    console.log("🖱️ [DEBUG] Button clicked: sendMessage");
+    const input = document.getElementById('messageInput');
+    const chatContainer = document.getElementById('chat-container');
 
-    await addDoc(collection(db, `rooms/${currentRoomId}/messages`), {
-      senderId: currentUser.uid,
-      senderName: currentUser.displayName || 'Scientist',
-      content,
-      timestamp: serverTimestamp()
-    });
-
-    if (content.toLowerCase().includes('@bot')) {
-      handleBotResponse(content);
+    if (!input) {
+        console.error("❌ [DEBUG] messageInput not found!");
+        return;
     }
 
-    input.value = '';
+    const content = input.value.trim();
+    if (!content) return;
+    
+    if (!currentRoomId) {
+        console.error("❌ [DEBUG] No currentRoomId! Cannot send.");
+        alert("Wait for room connect...");
+        return;
+    }
+
+    console.log("💬 [DEBUG] Sending message:", content);
+
+    // --- Command Support (Detection) ---
+    if (content.toLowerCase().includes('addnew room')) {
+      input.value = '';
+      createRoom();
+      return;
+    }
+
+    try {
+      // 1. Save to Firestore (Real-time sync)
+      await addDoc(collection(db, `rooms/${currentRoomId}/messages`), {
+        senderId: currentUser.uid,
+        senderName: currentUser.displayName || 'Scientist',
+        content,
+        timestamp: serverTimestamp()
+      });
+
+      // 2. Clear Input
+      input.value = '';
+
+      // 3. AI Trigger (if needed)
+      if (content.toLowerCase().includes('@bot')) {
+        handleBotResponse(content);
+      }
+    } catch (err) {
+      console.error("🚨 [DEBUG] Send message error:", err);
+    }
   }
 
   async function handleBotResponse(text) {
+    console.log("🛰️ [DEBUG] Calling Room API for bot response...");
     const indicator = document.getElementById('typing-indicator');
+    
     try {
       if (indicator) indicator.classList.remove('hidden');
 
@@ -480,29 +521,30 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           topic: currentRoomTopic,
-          message: text,
-          // Optimization: could pass chat history here
+          roomId: currentRoomId,
+          message: text
         })
       });
 
       const data = await response.json();
-      const botText = data.reply || "Thinking mode offline. 🧪";
+      console.log("📦 [DEBUG] API response:", data);
 
-      await addDoc(collection(db, `rooms/${currentRoomId}/messages`), {
-        senderId: 'system-ai',
-        senderName: 'Room-Bot',
-        content: botText,
-        timestamp: serverTimestamp()
-      });
+      if (data.reply) {
+        await addDoc(collection(db, `rooms/${currentRoomId}/messages`), {
+          senderId: 'system-ai',
+          senderName: 'Room-Bot',
+          content: data.reply,
+          timestamp: serverTimestamp()
+        });
+      }
     } catch (err) {
-      console.error("AI Error:", err);
+      console.error("🌪️ [DEBUG] Bot response error:", err);
     } finally {
       if (indicator) indicator.classList.add('hidden');
     }
   }
 
-  document.getElementById('send-btn').onclick = sendMessage;
-  document.getElementById('user-input').onkeypress = (e) => { if(e.key === 'Enter') sendMessage(); };
+  document.getElementById('messageInput').onkeypress = (e) => { if(e.key === 'Enter') sendMessage(); };
 
 </script>
 </body></html>
