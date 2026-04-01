@@ -7,11 +7,18 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { message, topic, history } = req.body;
+  const { message, roomId, topic } = req.body;
+  console.log("🚀 [DEBUG] Received message for room:", roomId);
 
   if (!message) return res.status(400).json({ error: 'Message is required' });
 
   try {
+    // If not a bot mention, just return (or handle logging)
+    if (!message.toLowerCase().includes('@bot')) {
+      return res.status(200).json({ reply: null });
+    }
+
+    console.log("🤖 [DEBUG] Calling OpenRouter API...");
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -25,15 +32,10 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "system",
-            content: `You are STEMVI Room Bot, a helpful academic assistant for a group study session.
-            The current topic is: ${topic || "General Study"}.
-            Rules:
-            1. Explain in simple Hinglish when helpful.
-            2. For technical steps, use 1, 2, 3 numbering.
-            3. Keep answers concise and direct.
-            4. Use emojis to keep it engaging. 🎯`
+            content: `You are STEMVI Room Bot, a helpful academic assistant for room: ${roomId}.
+            Topic: ${topic || "General Study"}.
+            Rules: Use simple Hinglish where helpful, keep it concise, and use step-by-step numbering. 🎯`
           },
-          ...(history || []),
           { role: "user", content: message }
         ],
         max_tokens: 1000
@@ -41,13 +43,14 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
-    if (data.error) throw new Error(data.error.message || 'OpenRouter API error');
+    console.log("📥 [DEBUG] API raw response received");
 
-    const reply = data.choices?.[0]?.message?.content || "I'm having a bit of a brain freeze! 🧊";
-    res.status(200).json({ reply });
+    const botReply = data?.choices?.[0]?.message?.content || "Scientist, I'm currently recalibrating. Please try again! 🧪";
+    
+    res.status(200).json({ reply: botReply });
 
   } catch (err) {
-    console.error('Chat-Room API Error:', err);
+    console.error('🚨 [DEBUG] Chat-Room API Error:', err);
     res.status(500).json({ error: 'Internal Server Error', details: err.message });
   }
 }
