@@ -1,45 +1,32 @@
 export default async function handler(req, res) {
-  // CORS
-  res.setHeader('Access-Control-Allow-Credentials', true);
+  // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
-  // Expecting text input to clean/process
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { text } = req.body;
   if (!text || typeof text !== 'string') {
-    return res.status(400).json({ error: 'Missing or invalid "text" in request body' });
+    return res.status(400).json({ error: 'Text input is required and must be a string' });
   }
 
   try {
     // 1. Basic cleaning: remove extra whitespace, trim, normalize
     const cleanedText = text
       .trim()
-      .replace(/\s+/g, ' ')
-      .replace(/[^\x20-\x7E\n]/g, ''); // Remove non-printable characters
+      .replace(/[ \t]+/g, ' ') // Replace multiple spaces/tabs with a single space
+      .replace(/\r/g, '')      // Remove carriage returns
+      .replace(/\n{3,}/g, '\n\n'); // Normalize multiple newlines to max 2
 
     // 2. Return processed text
     res.status(200).json({
-      success: true,
-      originalText: text,
-      cleanedText: cleanedText,
-      timestamp: new Date().toISOString()
+      cleanedText: cleanedText
     });
 
   } catch (err) {
     console.error('OCR Handler Error:', err);
-    res.status(500).json({ error: 'Text processing failed', details: err.message });
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
   }
 }

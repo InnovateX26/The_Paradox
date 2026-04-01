@@ -1,69 +1,52 @@
 export default async function handler(req, res) {
-  // 1. CORS Support
-  res.setHeader('Access-Control-Allow-Credentials', true);
+  // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed. Use POST.' });
-  }
-
-  // 2. Input Validation
   const { message } = req.body;
   if (!message || typeof message !== 'string') {
-    return res.status(400).json({ error: 'Missing or invalid "message" in request body.' });
+    return res.status(400).json({ error: 'Message is required and must be a string' });
   }
 
   try {
-    // 3. AI Call
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
         "HTTP-Referer": "https://stemvi.vercel.app",
-        "X-Title": "STEMVI Chatbot"
+        "X-Title": "STEMVI Doubt Bot"
       },
       body: JSON.stringify({
-        model: "anthropic/claude-3.5-sonnet",
+        model: "openai/gpt-4o-mini",
         messages: [
           {
             role: "system",
-            content: "You are STEMVI AI, an intelligent academic assistant. Explain concepts clearly, give step-by-step solutions, help in coding, and keep answers concise and structured."
+            content: `You are STEMVI AI, a smart academic mentor for Indian students preparing for JEE/NEET. 
+            Explain concepts in simple Hinglish when helpful. 
+            Use step-by-step explanations for problems. 
+            Give coding help when needed. 
+            Use relatable Indian examples (cricket, chai, daily life). 
+            Keep answers structured and concise.`
           },
-          {
-            role: "user",
-            content: message
-          }
-        ]
+          { role: "user", content: message }
+        ],
+        max_tokens: 1000
       })
     });
 
     const data = await response.json();
+    if (data.error) throw new Error(data.error.message || 'OpenRouter API Error');
 
-    if (!data.choices || !data.choices[0]) {
-      throw new Error('AI response error: ' + JSON.stringify(data));
-    }
-
-    // 4. Return formatted response
-    res.status(200).json({
-      reply: data.choices[0].message.content
-    });
+    const reply = data.choices?.[0]?.message?.content || "Sorry, I couldn't generate a reply.";
+    res.status(200).json({ reply });
 
   } catch (err) {
     console.error('Chat API Error:', err);
-    res.status(500).json({
-      error: 'Failed to generate reply',
-      details: err.message
-    });
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
   }
 }

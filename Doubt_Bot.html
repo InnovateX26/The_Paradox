@@ -240,7 +240,7 @@
 </body><script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
   import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, collection, query, where, orderBy, getDocs, addDoc, serverTimestamp, onSnapshot, limit } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, collection, query, where, orderBy, getDocs, addDoc, updateDoc, serverTimestamp, onSnapshot, limit } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
   import { initAuthGuard, handleSignOut } from "./js/auth-guard.js";
 
   const firebaseConfig = {
@@ -363,6 +363,10 @@
     const content = input.value.trim();
     if (!content || !currentUser) return;
     
+    // UI: Add user message immediately
+    appendMessageUI({ role: 'user', content, timestamp: new Date() });
+    input.value = '';
+
     if (!currentSessionId) {
       const docRef = await addDoc(collection(db, `chatSessions/${currentUser.uid}/sessions`), {
         title: content.substring(0, 30),
@@ -370,7 +374,6 @@
         type: 'doubt'
       });
       currentSessionId = docRef.id;
-      selectSession(currentSessionId);
     }
     
     await addDoc(collection(db, `chatSessions/${currentUser.uid}/sessions/${currentSessionId}/messages`), {
@@ -379,26 +382,24 @@
       timestamp: serverTimestamp()
     });
     
-    input.value = '';
-    
-    callOpenRouter(content);
+    // Call our serverless backend
+    await callChatAPI(content);
   }
 
-  async function callOpenRouter(userText) {
-    const systemPrompt = "You are StemVI's Lab Assistant. Explain STEM concepts in Hinglish. Be precise, use analogies, and encourage the student.";
+  async function callChatAPI(userText) {
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          model: "anthropic/claude-3.5-sonnet",
-          messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userText }]
-        })
+        body: JSON.stringify({ message: userText })
       });
+      
       const data = await response.json();
-      const aiText = data.choices[0].message.content;
+      if (data.error) throw new Error(data.error);
+
+      const aiText = data.reply;
       
       await addDoc(collection(db, `chatSessions/${currentUser.uid}/sessions/${currentSessionId}/messages`), {
         role: 'assistant',
@@ -412,6 +413,7 @@
       });
     } catch (err) {
       console.error("AI Error:", err);
+      appendMessageUI({ role: 'assistant', content: "Mafi chahta hoon, kuch error aaya hai. Dobara try karein.", timestamp: new Date() });
     }
   }
 

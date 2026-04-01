@@ -1,25 +1,15 @@
 export default async function handler(req, res) {
-  // CORS
-  res.setHeader('Access-Control-Allow-Credentials', true);
+  // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { text } = req.body;
-  if (!text || typeof text !== 'string') {
-    return res.status(400).json({ error: 'Missing or invalid "text" in request body' });
+  if (!text || typeof text !== 'string' || text.trim() === '') {
+    return res.status(400).json({ error: 'Text content is required and must be a non-empty string' });
   }
 
   try {
@@ -32,7 +22,7 @@ export default async function handler(req, res) {
         "X-Title": "STEMVI Scan Tool"
       },
       body: JSON.stringify({
-        model: "anthropic/claude-3.5-sonnet",
+        model: "openai/gpt-4o-mini",
         messages: [
           {
             role: "system",
@@ -40,23 +30,27 @@ export default async function handler(req, res) {
           },
           {
             role: "user",
-            content: `Explain the following content in simple terms. If it's a problem, solve step-by-step:\n\n${text}`
+            content: `Explain the following content in simple Hinglish. 
+            If it's a problem, solve step-by-step. 
+            If it's theory, summarize clearly and give exam tips. 
+            Also provide a 'Pro Tip' for exams.
+            
+            Content:
+            ${text}`
           }
-        ]
+        ],
+        max_tokens: 1500
       })
     });
 
     const data = await response.json();
-    if (!data.choices || !data.choices[0]) {
-      throw new Error('AI explanation failed');
-    }
+    if (data.error) throw new Error(data.error.message || 'OpenRouter API Error');
 
-    res.status(200).json({
-      explanation: data.choices[0].message.content
-    });
+    const explanation = data.choices?.[0]?.message?.content || "No explanation could be generated.";
+    res.status(200).json({ explanation });
 
   } catch (err) {
     console.error('Scan API Error:', err);
-    res.status(500).json({ error: 'Failed to explain content', details: err.message });
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
   }
 }

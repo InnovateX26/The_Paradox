@@ -29,8 +29,8 @@ export default async function handler(req, res) {
           "X-Title": "StemVI PDF OCR"
         },
         body: JSON.stringify({
-          model: "anthropic/claude-3.5-sonnet",
-          max_tokens: 1500,
+          model: "openai/gpt-4o-mini",
+          max_tokens: 1000,
           messages: [{
             role: "user",
             content: [
@@ -40,7 +40,7 @@ export default async function handler(req, res) {
               },
               {
                 type: "text",
-                text: "Extract all text from this PDF page. Preserve equations, formulas, and structure. Output extracted text only."
+                text: "Extract all text from this PDF page. Preserve equations and formulas. Output extracted text only."
               }
             ]
           }]

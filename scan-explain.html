@@ -318,50 +318,68 @@
 
   async function processFile(file) {
     showLoadingState();
-    
     const isPDF = file.type === 'application/pdf';
     
     try {
+      let extractedText = "";
+      
+      // Step 1: Extract Text (Vision Step)
       if (isPDF) {
         const pdfjsLib = window['pdfjs-dist/build/pdf'];
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         const pages = [];
-        
-        for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
+        for (let i = 1; i <= Math.min(pdf.numPages, 3); i++) {
           const page = await pdf.getPage(i);
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
-          const viewport = page.getViewport({ scale: 2.0 });
+          const viewport = page.getViewport({ scale: 1.5 });
           canvas.width = viewport.width;
           canvas.height = viewport.height;
           await page.render({ canvasContext: ctx, viewport }).promise;
-          pages.push({
-            pageNumber: i,
-            base64: canvas.toDataURL('image/jpeg', 0.9).split(',')[1]
-          });
+          pages.push({ pageNumber: i, base64: canvas.toDataURL('image/jpeg', 0.8).split(',')[1] });
         }
-        
-        const response = await fetch('/api/ocr-pdf', {
+        const ocrRes = await fetch('/api/ocr-pdf', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ pages })
         });
-        const result = await response.json();
-        displayResult(result);
-        
+        const ocrData = await ocrRes.json();
+        extractedText = ocrData.extractedText || "";
       } else {
         const base64 = await fileToBase64(file);
-        const response = await fetch('/api/ocr', {
+        // We reuse ocr-pdf logic for consistency or just a direct vision call
+        const response = await fetch('/api/ocr-pdf', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ base64, mimeType: file.type })
+          body: JSON.stringify({ pages: [{ pageNumber: 1, base64 }] })
         });
-        const result = await response.json();
-        displayResult(result);
+        const data = await response.json();
+        extractedText = data.extractedText || "";
       }
+
+      if (!extractedText) throw new Error("Could not read any text from the file.");
+
+      // Step 2: Clean Text via our new /api/ocr
+      const cleanRes = await fetch('/api/ocr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: extractedText })
+      });
+      const cleanData = await cleanRes.json();
+      const finalCleanText = cleanData.cleanedText;
+
+      // Step 3: Explain via /api/scan
+      const scanRes = await fetch('/api/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: finalCleanText })
+      });
+      const scanData = await scanRes.json();
+      
+      displayResult(scanData.explanation, finalCleanText);
+
     } catch (err) {
       console.error(err);
       showError('Analysis failed: ' + err.message);
@@ -390,36 +408,32 @@
     alert(msg);
   }
 
-  function displayResult(result) {
-    if (!result.success) {
-      showError('OCR failed: ' + result.error);
-      return;
-    }
-    
-    const e = result.explanation;
+  function displayResult(explanationText, rawText) {
     document.getElementById('loading-state').classList.add('hidden');
     document.getElementById('result-display').classList.remove('hidden');
     document.getElementById('output-footer').classList.remove('hidden');
 
-    document.getElementById('topic-heading').textContent = e.topic;
-    document.getElementById('subject-badge').textContent = e.subject;
-    document.getElementById('hinglish-text').textContent = e.hinglishExplanation;
-    document.getElementById('analogy-text').textContent = e.analogy;
-    document.getElementById('exam-tip').textContent = e.examTip;
-    document.getElementById('difficulty-badge').textContent = e.difficulty;
+    // Display the unified explanation in the Hinglish panel
+    document.getElementById('topic-heading').textContent = "Lab Report";
+    document.getElementById('subject-badge').textContent = "STEM Note";
+    document.getElementById('hinglish-text').innerHTML = explanationText.replace(/\n/g, '<br>');
+    
+    // Hide details that are no longer separately structured in the new API
+    document.getElementById('analogy-text').parentElement.classList.add('hidden');
+    document.getElementById('exam-tip').parentElement.classList.add('hidden');
+    document.getElementById('difficulty-badge').classList.add('hidden');
     
     const termsContainer = document.getElementById('key-terms');
-    termsContainer.innerHTML = e.keyTerms.map(t => 
-      `<span class="px-6 py-3 bg-white/5 rounded-xl text-xs font-bold border border-white/5">${t}</span>`
-    ).join('');
+    termsContainer.innerHTML = `<p class='text-xs opacity-60'>Analysis complete for your document.</p>`;
 
-    saveToHistory(e);
+    saveToHistory(explanationText, rawText);
   }
 
-  async function saveToHistory(data) {
+  async function saveToHistory(explanation, text) {
     if (!currentUser) return;
     await addDoc(collection(db, `scans/${currentUser.uid}/history`), {
-      ...data,
+      explanation,
+      originalText: text,
       scannedAt: serverTimestamp()
     });
   }

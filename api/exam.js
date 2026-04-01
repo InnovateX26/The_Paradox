@@ -1,25 +1,15 @@
 export default async function handler(req, res) {
-  // CORS
-  res.setHeader('Access-Control-Allow-Credentials', true);
+  // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { topic } = req.body;
-  if (!topic || typeof topic !== 'string') {
-    return res.status(400).json({ error: 'Missing or invalid "topic" in request body' });
+  if (!topic || typeof topic !== 'string' || topic.trim() === '') {
+    return res.status(400).json({ error: 'Topic is required and must be a non-empty string' });
   }
 
   try {
@@ -32,7 +22,7 @@ export default async function handler(req, res) {
         "X-Title": "STEMVI Exam Tool"
       },
       body: JSON.stringify({
-        model: "anthropic/claude-3.5-sonnet",
+        model: "openai/gpt-4o-mini",
         messages: [
           {
             role: "system",
@@ -40,16 +30,19 @@ export default async function handler(req, res) {
           },
           {
             role: "user",
-            content: `Generate flashcards for studying. Topic: ${topic}. Format: Q: question A: answer. Provide between 5 and 10 flashcards.`
+            content: `Generate 5–10 high-quality flashcards for ${topic}.
+            Format:
+            Q: question
+            A: answer
+            Keep answers short, clear, and exam-focused.`
           }
-        ]
+        ],
+        max_tokens: 1000
       })
     });
 
     const data = await response.json();
-    if (!data.choices || !data.choices[0]) {
-      throw new Error('AI content generation failed');
-    }
+    if (data.error) throw new Error(data.error.message || 'OpenRouter API Error');
 
     const rawText = data.choices[0].message.content;
     
@@ -71,6 +64,6 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error('Exam API Error:', err);
-    res.status(500).json({ error: 'Flashcard generation failed', details: err.message });
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
   }
 }

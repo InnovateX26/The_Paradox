@@ -336,26 +336,26 @@ ain>
             
             const btn = document.getElementById('gen-btn');
             const originalText = btn.innerHTML;
-            btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span><span>Creating...</span>';
+            btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span><span>Building...</span>';
             btn.disabled = true;
 
-            const systemPrompt = `Create 5 flashcards for the topic in Hinglish. Return ONLY a JSON array of objects: [{"question": "...", "answer": "...", "subject": "..."}]`;
-            
             try {
-                const response = await fetch("/api/chat", {
+                const response = await fetch("/api/exam", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        model: "anthropic/claude-3.5-sonnet",
-                        messages: [{ role: "system", content: systemPrompt }, { role: "user", content: `Topic: ${topic}` }]
-                    })
+                    body: JSON.stringify({ topic })
                 });
+                
                 const data = await response.json();
-                const cards = JSON.parse(data.choices[0].message.content);
+                if (data.error) throw new Error(data.error);
+
+                const cards = data.flashcards;
                 
                 for (const c of cards) {
                     await addDoc(collection(db, `flashcards/${currentUser.uid}/cards`), { 
-                        ...c, 
+                        question: c.question,
+                        answer: c.answer,
+                        subject: topic, // Use topic as subject for categorization
                         createdAt: serverTimestamp() 
                     });
                 }
@@ -363,8 +363,8 @@ ain>
                 document.getElementById('topic-input').value = '';
                 loadFlashcards();
             } catch (err) {
-                console.error(err);
-                alert("Generation failed.");
+                console.error("Flashcard Gen Error:", err);
+                alert("Generation failed. Please try a different topic.");
             } finally {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
