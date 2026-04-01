@@ -32,29 +32,44 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "system",
-            content: `You are a specialized STEM flashcard generator. 
-            Generate high-quality, exam-focused flashcards in Indian English/Hinglish when helpful.
+            content: `You are a high-end STEM AI educator for JEE/NEET aspirants.
+            Task: Generate a comprehensive "Premium Coaching Summary" study card.
             
-            OUTPUT RULES:
+            STRICT OUTPUT RULES:
             1. Return ONLY valid JSON.
-            2. Each card must have: "question", "answer", and "revision" (a 1-line quick concept tip).
-            3. Ensure proper spacing between words.
-            4. No messy formatting or merged text.
+            2. WORD SPACING: Standard spacing between words. NO merged text or PascalCase.
+            3. DEFINITION: 1st in proper academic English, 2nd same concept in simple Hinglish.
+            4. TONE: Class 9-12 student-friendly but JEE/NEET depth.
             
-            FORMAT:
+            JSON SCHEMA:
             {
               "flashcards": [
                 {
-                  "question": "...",
-                  "answer": "...",
-                  "revision": "..."
+                  "topic": "Topic Name",
+                  "definition_english": "Academic definition...",
+                  "definition_hinglish": "Simple explanation...",
+                  "properties": ["..."],
+                  "types": ["..."],
+                  "conditions": ["..."],
+                  "formula": ["Formula 1", "Formula 2"],
+                  "equations": ["Eq 1"],
+                  "units": ["Metric Units"],
+                  "important_points": ["Point 1", "Point 2"],
+                  "example": "Real-world/numerical case",
+                  "application": ["App 1", "App 2"],
+                  "use_case": ["Practical use case"],
+                  "algorithm": ["Step 1", "Step 2"],
+                  "mnemonics": "Memory trick",
+                  "reaction": "Chemistry only, else null",
+                  "diagram": "Text description for diagram",
+                  "revision": "One-line quick recall point"
                 }
               ]
             }`
           },
           {
             role: "user",
-            content: `Generate 5-8 flashcards for the topic: ${topic}.`
+            content: `Create 3-5 premium study cards for: ${topic}. Focus on JEE/NEET level depth.`
           }
         ],
         response_format: { type: "json_object" },
@@ -71,7 +86,6 @@ export default async function handler(req, res) {
     let result;
     
     try {
-        // Look for JSON in the content (OpenRouter gpt-4o-mini usually respects response_format)
         const content = data.choices?.[0]?.message?.content || "{}";
         result = JSON.parse(content);
     } catch (parseErr) {
@@ -80,10 +94,6 @@ export default async function handler(req, res) {
     }
 
     const flashcards = result.flashcards || [];
-    if (flashcards.length === 0) {
-        throw new Error("No flashcards found in AI response.");
-    }
-
     res.status(200).json({ flashcards });
 
   } catch (err) {

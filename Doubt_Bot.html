@@ -265,6 +265,18 @@
   let currentUser = null;
   let currentSessionId = null;
 
+  // --- Defensive Helper ---
+  const safeSet = (id, content, isHtml = false) => {
+    const el = document.getElementById(id);
+    if (!el) {
+        console.error(`❌ [DEBUG] DOM Element missing: #${id}`);
+        return null;
+    }
+    if (isHtml) el.innerHTML = content;
+    else el.textContent = content;
+    return el;
+  };
+
   initAuthGuard(auth);
   
   const logoutBtns = ['sign-out-btn', 'sidebar-logout-btn'];
@@ -277,13 +289,13 @@
     currentUser = user;
     loadSessions(user.uid);
     
-    document.getElementById('user-email-display').textContent = user.email;
+    safeSet('user-email-display', user.email);
     
     const userDoc = await getDoc(doc(db, "users", user.uid));
     if (userDoc.exists()) {
       const userData = userDoc.data();
-      document.getElementById('user-name-display').textContent = userData.name || 'User';
-      document.getElementById('user-avatar-initial').textContent = (userData.name || 'U').charAt(0).toUpperCase();
+      safeSet('user-name-display', userData.name || 'User');
+      safeSet('user-avatar-initial', (userData.name || 'U').charAt(0).toUpperCase());
     }
 
     // Check for Live Server (Port 5500)
@@ -369,6 +381,17 @@
     `;
     container.insertAdjacentHTML('beforeend', html);
   }
+
+  // --- Quick Replies ---
+  document.querySelectorAll('#quick-replies button').forEach(btn => {
+    btn.onclick = () => {
+      const input = document.getElementById('user-input');
+      if (input) {
+        input.value = btn.innerText;
+        sendMessage();
+      }
+    };
+  });
 
   async function sendMessage() {
     console.log("🚀 [DEBUG] sendMessage() started");

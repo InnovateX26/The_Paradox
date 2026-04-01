@@ -91,6 +91,59 @@
             -webkit-backdrop-filter: blur(24px);
             border: var(--glass-border);
         }
+        .card, #card-definition-en, #card-definition-hi, .scroll-content, .objective-list {
+            white-space: normal;
+            word-spacing: 4px;
+            letter-spacing: 0.05em;
+            line-height: 1.8;
+            word-break: break-word;
+        }
+        .scroll-content {
+            max-height: 420px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) transparent;
+            padding-right: 12px;
+        }
+        .scroll-content::-webkit-scrollbar {
+            width: 4px;
+        }
+        .scroll-content::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+        .segment-label {
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .chip-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .chip {
+            background: rgba(154, 177, 122, 0.1);
+            border: 1px solid rgba(154, 177, 122, 0.3);
+            color: var(--sage-light);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .formula-chip {
+            font-family: 'Courier New', monospace;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--on-surface);
+        }
     </style>
 </head>
 <body class="bg-surface font-body text-on-surface">
@@ -174,21 +227,99 @@
             </header>
 
             <!-- Card View Area -->
-            <div class="flashcard-container" id="card-area">
+            <div class="flashcard-container" id="flashcard-container">
                 <div class="flashcard" id="main-card">
+                    <!-- Standardized Macro-Segment Generator -->
                     <div class="flashcard-front">
-                        <div class="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-10" id="card-subject">Physics</div>
-                        <h2 class="text-3xl font-black leading-tight text-on-surface uppercase tracking-tight" id="card-question"></h2>
-                        <p class="mt-12 text-[10px] text-primary/40 font-black uppercase tracking-widest animate-pulse">Tap to reveal answer</p>
+                        <div class="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-4" id="card-subject">Physics</div>
+                        <h2 class="text-2xl font-black leading-tight text-primary uppercase tracking-tight mb-4" id="card-title">Topic Name</h2>
+                        
+                        <div class="scroll-content w-full space-y-6">
+                            <div id="seg-def-en">
+                                <p class="segment-label">📖 Definition (English)</p>
+                                <p class="text-sm font-bold text-on-surface leading-snug" id="card-definition-en"></p>
+                            </div>
+                            
+                            <div id="seg-def-hi">
+                                <p class="segment-label">🗣 Explanation (Hinglish)</p>
+                                <p class="text-sm font-bold text-on-surface-variant leading-relaxed italic" id="card-definition-hi"></p>
+                            </div>
+
+                            <div id="seg-formula">
+                                <p class="segment-label">📐 Formulas</p>
+                                <div class="chip-container" id="card-formula-list"></div>
+                            </div>
+
+                            <div id="seg-units">
+                                <p class="segment-label">📏 Standard Units</p>
+                                <div class="chip-container" id="card-units-list"></div>
+                            </div>
+                            
+                            <div id="seg-equations">
+                                <p class="segment-label">📊 Key Equations</p>
+                                <div class="chip-container" id="card-equations-list"></div>
+                            </div>
+
+                            <div id="seg-conditions">
+                                <p class="segment-label">⚠️ Conditions</p>
+                                <div class="chip-container" id="card-conditions-list"></div>
+                            </div>
+                        </div>
+
+                        <p class="mt-4 text-[9px] text-primary/40 font-black uppercase tracking-widest animate-pulse">Tap to see Exam Focus</p>
                     </div>
-                    <div class="flashcard-back">
-                        <div class="mt-8 p-4 bg-white/10 rounded-xl border border-white/10 w-full" id="card-revision-box">
-                            <p class="text-[10px] font-black uppercase tracking-widest text-dark/60 mb-1">💡 Revision Tip</p>
+
+                    <div class="flashcard-back card">
+                        <div class="scroll-content w-full space-y-6">
+                            <div id="seg-points">
+                                <p class="segment-label">🔥 Exam Important Points</p>
+                                <div id="card-points" class="objective-list space-y-2"></div>
+                            </div>
+
+                            <div id="seg-example">
+                                <p class="segment-label">💡 Numerical/Real Example</p>
+                                <p class="text-xs font-bold text-dark p-3 bg-dark/5 rounded-xl border border-dark/10 leading-relaxed italic" id="card-example"></p>
+                            </div>
+
+                            <div id="seg-mnemonics">
+                                <p class="segment-label">🧠 Memory Trick (Mnemonic)</p>
+                                <p class="text-xs font-black text-primary p-3 bg-primary/10 rounded-xl border border-primary/20" id="card-mnemonic"></p>
+                            </div>
+
+                            <div id="seg-properties">
+                                <p class="segment-label">⭐ Key Properties</p>
+                                <div class="chip-container" id="card-properties-list"></div>
+                            </div>
+
+                            <div id="seg-reaction">
+                                <p class="segment-label">⚗️ Reaction (Chemistry)</p>
+                                <code class="block text-xs font-bold bg-dark text-primary p-3 rounded-xl" id="card-reaction"></code>
+                            </div>
+
+                            <div id="seg-diagram">
+                                <p class="segment-label">🖼 Diagram Context</p>
+                                <p class="text-[10px] font-bold opacity-60 italic" id="card-diagram"></p>
+                            </div>
+                            
+                            <div id="seg-app">
+                                <p class="segment-label">🚀 Applications & Use Cases</p>
+                                <div class="chip-container" id="card-app-list"></div>
+                            </div>
+
+                            <div id="seg-algo">
+                                <p class="segment-label">⚙️ Procedural Steps / Algorithm</p>
+                                <div id="card-algo" class="objective-list space-y-2"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 p-4 bg-white/10 rounded-xl border border-white/10 w-full text-left" id="card-revision-box">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-dark/60 mb-1">⚡ Quick Revision</p>
                             <p class="text-xs font-bold leading-relaxed" id="card-revision">...</p>
                         </div>
-                        <div class="mt-8 flex gap-4">
-                            <button class="bg-dark text-primary px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all">Got it! ✅</button>
-                            <button class="bg-transparent border-2 border-dark/20 text-dark px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-dark/5 transition-all">Review 🔁</button>
+                        
+                        <div class="mt-6 flex gap-4">
+                            <button class="bg-dark text-primary px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all">Crystal Clear ✅</button>
+                            <button class="bg-transparent border-2 border-dark/20 text-dark px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-dark/5 transition-all">Review Later 🔁</button>
                         </div>
                     </div>
                 </div>
@@ -231,7 +362,6 @@
             </div>
         </footer>
     </main>
-ain>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
@@ -239,6 +369,7 @@ ain>
         import { getFirestore, doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
         import { initAuthGuard, handleSignOut } from "./js/auth-guard.js";
 
+        // ... (firebaseConfig remains same) ...
         const firebaseConfig = {
             apiKey: "AIzaSyBrep0S6P0oAzMQ-bE8h7GHTi5wn_QNrVg",
             authDomain: "stemvi-afbac.firebaseapp.com",
@@ -256,7 +387,25 @@ ain>
         let flashcards = [];
         let currentIndex = 0;
 
+        // --- Debug Helpers ---
+        const cleanText = (text) => {
+            if (!text) return "";
+            return text.replace(/\s+/g, " ").trim();
+        };
+
         initAuthGuard(auth);
+
+        // --- Defensive Helper ---
+        const safeSet = (id, content, isHtml = false) => {
+            const el = document.getElementById(id);
+            if (!el) {
+                console.error(`❌ [DEBUG] DOM Element missing: #${id}`);
+                return null;
+            }
+            if (isHtml) el.innerHTML = content;
+            else el.textContent = content;
+            return el;
+        };
 
         const logoutBtns = ['sign-out-btn', 'sidebar-logout-btn'];
         logoutBtns.forEach(id => {
@@ -271,15 +420,14 @@ ain>
             const userDoc = await getDoc(doc(db, "users", user.uid));
             if (userDoc.exists()) {
                 const userData = userDoc.data();
-                document.getElementById('user-name-display').textContent = userData.name || 'Student';
-                document.getElementById('user-email-display').textContent = user.email || 'authenticated user';
-                document.getElementById('user-avatar-initial').textContent = (userData.name || 'S').charAt(0).toUpperCase();
+                safeSet('user-name-display', userData.name || 'Student');
+                safeSet('user-email-display', user.email || 'authenticated user');
+                safeSet('user-avatar-initial', (userData.name || 'S').charAt(0).toUpperCase());
             }
 
-            // Port 5500 Check
             if (window.location.port === '5500') {
-                console.warn("⚠️ [DEBUG] Live Server detected. Flashcards will fail.");
-                document.getElementById('live-server-warning').classList.remove('hidden');
+                const warning = document.getElementById('live-server-warning');
+                if (warning) warning.classList.remove('hidden');
             }
         };
 
@@ -288,13 +436,14 @@ ain>
             const querySnapshot = await getDocs(q);
             flashcards = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             
+            const cardArea = document.getElementById('flashcard-container');
             if (flashcards.length > 0) {
-                document.getElementById('card-area').classList.remove('hidden');
+                if (cardArea) cardArea.classList.remove('hidden');
                 const emptyState = document.getElementById('empty-state');
                 if (emptyState) emptyState.remove();
                 renderCard();
             } else {
-                document.getElementById('card-area').classList.add('hidden');
+                if (cardArea) cardArea.classList.add('hidden');
                 let emptyState = document.getElementById('empty-state');
                 if (!emptyState) {
                     emptyState = document.createElement('div');
@@ -312,7 +461,9 @@ ain>
                             Scan Karo Notes 📸
                         </button>
                     `;
-                    document.getElementById('card-area').parentElement.appendChild(emptyState);
+                    if (cardArea && cardArea.parentElement) {
+                        cardArea.parentElement.appendChild(emptyState);
+                    }
                 }
             }
         }
@@ -320,12 +471,60 @@ ain>
         function renderCard() {
             if (flashcards.length === 0) return;
             const card = flashcards[currentIndex];
-            document.getElementById('card-question').innerHTML = marked.parse(card.question);
-            document.getElementById('card-answer').innerHTML = marked.parse(card.answer);
-            document.getElementById('card-revision').textContent = card.revision || 'No revision tip available.';
-            document.getElementById('card-subject').textContent = card.subject || 'STEM';
-            document.getElementById('card-progress').textContent = `${currentIndex + 1} / ${flashcards.length}`;
-            document.getElementById('main-card').classList.remove('flipped');
+            console.log("🎨 [DEBUG] Rendering JEE/NEET Card:", currentIndex, card);
+
+            // Conditional Helper
+            const renderSegment = (segId, elId, data, type = 'text') => {
+                const seg = document.getElementById(segId);
+                const el = document.getElementById(elId);
+                if (!seg || !el) return;
+
+                if (!data || (Array.isArray(data) && data.length === 0) || data === "N/A" || data === "null") {
+                    seg.classList.add('hidden');
+                } else {
+                    seg.classList.remove('hidden');
+                    if (type === 'text') el.innerHTML = marked.parse(cleanText(data));
+                    if (type === 'raw') el.textContent = cleanText(data);
+                    if (type === 'list') {
+                        el.innerHTML = data.map(i => `
+                            <div class="objective-item">
+                                <span class="text-primary/40 font-black">➤</span>
+                                <span>${cleanText(i)}</span>
+                            </div>
+                        `).join("");
+                    }
+                    if (type === 'chips') {
+                        const isFormula = elId.includes('formula') || elId.includes('equations');
+                        el.innerHTML = data.map(i => `<span class="chip ${isFormula ? 'formula-chip' : ''}">${cleanText(i)}</span>`).join("");
+                    }
+                }
+            };
+
+            // --- Front Side Logic ---
+            safeSet('card-title', card.topic || card.title || "Smart Recall");
+            renderSegment('seg-def-en', 'card-definition-en', card.definition_english || card.definition || card.question);
+            renderSegment('seg-def-hi', 'card-definition-hi', card.definition_hinglish);
+            renderSegment('seg-formula', 'card-formula-list', card.formula, 'chips');
+            renderSegment('seg-units', 'card-units-list', card.units, 'chips');
+            renderSegment('seg-equations', 'card-equations-list', card.equations, 'chips');
+            renderSegment('seg-conditions', 'card-conditions-list', card.conditions, 'chips');
+
+            // --- Back Side Logic ---
+            renderSegment('seg-points', 'card-points', card.important_points || card.objectives, 'list');
+            renderSegment('seg-example', 'card-example', card.example, 'raw');
+            renderSegment('seg-mnemonics', 'card-mnemonic', card.mnemonics, 'raw');
+            renderSegment('seg-properties', 'card-properties-list', card.properties, 'chips');
+            renderSegment('seg-reaction', 'card-reaction', card.reaction, 'raw');
+            renderSegment('seg-diagram', 'card-diagram', card.diagram, 'raw');
+            renderSegment('seg-app', 'card-app-list', [...(card.application || []), ...(card.use_case || [])], 'chips');
+            renderSegment('seg-algo', 'card-algo', card.algorithm, 'list');
+
+            safeSet('card-revision', cleanText(card.revision) || 'Quick recall tip...');
+            safeSet('card-subject', card.subject || 'STEM');
+            safeSet('card-progress', `${currentIndex + 1} / ${flashcards.length}`);
+            
+            const mainCard = document.getElementById('main-card');
+            if (mainCard) mainCard.classList.remove('flipped');
         }
 
         document.getElementById('main-card').onclick = () => {
@@ -377,7 +576,8 @@ ain>
                 });
                 
                 const data = await response.json();
-                console.log("📥 [DEBUG] Received Data:", data);
+                console.log("📥 [DEBUG] API RESPONSE:", data);
+                console.log("📥 [DEBUG] FLASHCARDS:", data.flashcards);
                 
                 if (data.error) throw new Error(data.error + (data.details ? ": " + data.details : ""));
 
@@ -388,8 +588,23 @@ ain>
                 
                 for (const c of cards) {
                     await addDoc(collection(db, `flashcards/${currentUser.uid}/cards`), { 
-                        question: (c.question || '').trim(),
-                        answer: (c.answer || '').trim(),
+                        topic: (c.topic || '').trim(),
+                        definition_english: (c.definition_english || '').trim(),
+                        definition_hinglish: (c.definition_hinglish || '').trim(),
+                        properties: c.properties || [],
+                        types: c.types || [],
+                        conditions: c.conditions || [],
+                        formula: c.formula || [],
+                        equations: c.equations || [],
+                        units: c.units || [],
+                        important_points: c.important_points || [],
+                        example: (c.example || '').trim(),
+                        application: c.application || [],
+                        use_case: c.use_case || [],
+                        algorithm: c.algorithm || [],
+                        mnemonics: (c.mnemonics || '').trim(),
+                        reaction: (c.reaction || '').trim(),
+                        diagram: (c.diagram || '').trim(),
                         revision: (c.revision || '').trim(),
                         subject: topic,
                         createdAt: serverTimestamp() 

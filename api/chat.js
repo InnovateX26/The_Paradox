@@ -7,10 +7,19 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { message } = req.body;
-  if (!message || typeof message !== 'string') {
-    return res.status(400).json({ error: 'Message is required and must be a string' });
+  const { message, messages, model } = req.body;
+  if (!message && !messages) {
+    return res.status(400).json({ error: 'Message or Messages array is required.' });
   }
+
+  // Universal mapping
+  const finalMessages = messages || [
+    {
+      role: "system",
+      content: "You are STEMVI AI, a smart academic mentor for JEE/NEET. Explain in Hinglish when helpful."
+    },
+    { role: "user", content: message }
+  ];
 
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -19,22 +28,11 @@ export default async function handler(req, res) {
         "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
         "HTTP-Referer": "https://stemvi.vercel.app",
-        "X-Title": "STEMVI Doubt Bot"
+        "X-Title": "STEMVI AI Bot"
       },
       body: JSON.stringify({
-        model: "openai/gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: `You are STEMVI AI, a smart academic mentor for Indian students preparing for JEE/NEET. 
-            Explain concepts in simple Hinglish when helpful. 
-            Use step-by-step explanations for problems. 
-            Give coding help when needed. 
-            Use relatable Indian examples (cricket, chai, daily life). 
-            Keep answers structured and concise.`
-          },
-          { role: "user", content: message }
-        ],
+        model: model || "openai/gpt-4o-mini",
+        messages: finalMessages,
         max_tokens: 1000
       })
     });
@@ -43,7 +41,7 @@ export default async function handler(req, res) {
     if (data.error) throw new Error(data.error.message || 'OpenRouter API Error');
 
     const reply = data.choices?.[0]?.message?.content || "Sorry, I couldn't generate a reply.";
-    res.status(200).json({ reply });
+    res.status(200).json({ reply, message: reply }); // Support both formats
 
   } catch (err) {
     console.error('Chat API Error:', err);

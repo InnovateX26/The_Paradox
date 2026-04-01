@@ -202,6 +202,19 @@
 
   let currentUser = null;
   let currentRoomId = null;
+  let currentRoomTopic = "General Session";
+
+  // --- Defensive Helper ---
+  const safeSet = (id, content, isHtml = false) => {
+    const el = document.getElementById(id);
+    if (!el) {
+        console.error(`❌ [DEBUG] DOM Element missing: #${id}`);
+        return null;
+    }
+    if (isHtml) el.innerHTML = content;
+    else el.textContent = content;
+    return el;
+  };
 
   initAuthGuard(auth);
 
@@ -221,9 +234,9 @@
     const userSnap = await getDoc(doc(db, "users", user.uid));
     const userData = userSnap.exists() ? userSnap.data() : {};
     
-    document.getElementById('user-name-display').textContent = userData.name || 'Scientist';
-    document.getElementById('user-email-display').textContent = user.email || 'authenticated user';
-    document.getElementById('user-avatar-initial').textContent = (userData.name || 'S').charAt(0).toUpperCase();
+    safeSet('user-name-display', userData.name || 'Scientist');
+    safeSet('user-email-display', user.email || 'authenticated user');
+    safeSet('user-avatar-initial', (userData.name || 'S').charAt(0).toUpperCase());
 
     if (roomId) {
       joinRoom(roomId);
@@ -288,8 +301,14 @@
 
   async function joinRoom(roomId) {
     currentRoomId = roomId;
-    document.getElementById('room-id-text').textContent = `#${roomId}`;
+    safeSet('room-id-text', `#${roomId}`);
     
+    // Fetch room details for context
+    const roomSnap = await getDoc(doc(db, "rooms", roomId));
+    if (roomSnap.exists()) {
+      currentRoomTopic = roomSnap.data().topic || "General Session";
+    }
+
     await updateDoc(doc(db, "rooms", roomId), {
       activeUsers: arrayUnion(currentUser.uid)
     });
@@ -352,6 +371,18 @@
     container.insertAdjacentHTML('beforeend', html);
   }
 
+  // --- Quick Replies ---
+  document.querySelectorAll('.btn-hover-scale').forEach(btn => {
+    if (btn.id === 'next-btn' || btn.id === 'prev-btn' || btn.tagName === 'INPUT') return;
+    btn.onclick = () => {
+      const input = document.getElementById('user-input');
+      if (input) {
+        input.value = btn.innerText;
+        sendMessage();
+      }
+    };
+  });
+
   async function sendMessage() {
     const input = document.getElementById('user-input');
     const content = input.value.trim();
@@ -375,20 +406,24 @@
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "anthropic/claude-3.5-sonnet",
+          model: "openai/gpt-4o-mini",
           messages: [
-            { role: "system", content: "You are StemVI Room-Bot. Participating in a group study session. Answer questions in Hinglish concisely." },
+            { 
+              role: "system", 
+              content: `You are StemVI Room-Bot, an expert academic mentor. 
+              The current room topic is: ${currentRoomTopic}. 
+              You are participating in a group study session. 
+              Explain concepts in Hinglish concisely. Focus on the topic! 🎯` 
+            },
             { role: "user", content: text }
           ]
         })
       });
 
       const data = await response.json();
-      const botText = data.choices[0].message.content;
+      const botText = data.reply || data.message || "I'm having trouble thinking right now...";
 
       await addDoc(collection(db, `rooms/${currentRoomId}/messages`), {
         senderId: 'system-ai',
