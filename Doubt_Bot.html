@@ -6,8 +6,9 @@
 <title>StemVI Doubt-Bot | Interactive Learning</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Playfair+Display:ital,wght@1,700;1,900&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
             theme: {
@@ -127,6 +128,11 @@
 </head>
 <body class="bg-dark-4 font-body text-on-surface selection:bg-primary-container selection:text-on-primary-container">
 <div class="progress-bar"></div>
+<!-- Live Server Warning Banner -->
+<div id="live-server-warning" class="hidden fixed top-0 left-0 w-full bg-red-600 text-white py-2 px-4 z-[9999] text-center font-bold flex items-center justify-center gap-3">
+    <span class="material-symbols-outlined">warning</span>
+    <span>Stop! You are on Live Server (Port 5500). The AI will NOT respond. Please run <code class="bg-black/20 px-2 py-1 rounded">vercel dev</code> instead.</span>
+</div>
 <!-- TopNavBar -->
 <header class="fixed top-0 left-0 w-full z-50 bg-[#1e2511]/60 backdrop-blur-3xl border-b border-white/10">
 <nav class="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
@@ -279,6 +285,12 @@
       document.getElementById('user-name-display').textContent = userData.name || 'User';
       document.getElementById('user-avatar-initial').textContent = (userData.name || 'U').charAt(0).toUpperCase();
     }
+
+    // Check for Live Server (Port 5500)
+    if (window.location.port === '5500') {
+      console.warn("⚠️ [SENIOR DEBUG] Detected Live Server (Port 5500). Backend functions will NOT work.");
+      document.getElementById('live-server-warning').classList.remove('hidden');
+    }
   };
 
   async function loadSessions(uid) {
@@ -351,7 +363,7 @@
           <span class="text-[10px] font-black uppercase tracking-widest text-primary">Lab Assistant</span>
         </div>
         <div class="bot-bubble-glass p-8 rounded-2xl rounded-tl-none prose prose-invert max-w-none">
-          <p class="text-on-surface leading-relaxed text-sm">${msg.content}</p>
+          <div class="text-on-surface leading-relaxed text-sm ai-reply-content">${marked.parse(msg.content)}</div>
         </div>
       </div>
     `;
@@ -359,66 +371,119 @@
   }
 
   async function sendMessage() {
+    console.log("🚀 [DEBUG] sendMessage() started");
     const input = document.getElementById('user-input');
-    const content = input.value.trim();
-    if (!content || !currentUser) return;
+    const content = input.value?.trim();
     
-    // UI: Add user message immediately
-    appendMessageUI({ role: 'user', content, timestamp: new Date() });
-    input.value = '';
+    console.log("📊 [DEBUG] State check:", { 
+      hasContent: !!content, 
+      hasUser: !!currentUser,
+      uid: currentUser?.uid,
+      sessionId: currentSessionId 
+    });
 
-    if (!currentSessionId) {
-      const docRef = await addDoc(collection(db, `chatSessions/${currentUser.uid}/sessions`), {
-        title: content.substring(0, 30),
-        updatedAt: serverTimestamp(),
-        type: 'doubt'
-      });
-      currentSessionId = docRef.id;
+    if (!content || !currentUser) {
+      console.warn("⚠️ [DEBUG] Stop! Either content is empty or user is not logged in.");
+      return;
     }
     
-    await addDoc(collection(db, `chatSessions/${currentUser.uid}/sessions/${currentSessionId}/messages`), {
-      role: 'user',
-      content,
-      timestamp: serverTimestamp()
-    });
-    
-    // Call our serverless backend
-    await callChatAPI(content);
+    try {
+      // 1. Immediate UI Feedback
+      console.log("💬 [DEBUG] Appending user message to UI");
+      appendMessageUI({ role: 'user', content, timestamp: new Date() });
+      input.value = '';
+
+      // 2. Firebase Session Management (Wrapped to prevent blocking AI)
+      console.log("🔥 [DEBUG] Starting Firebase sync...");
+      try {
+        if (!currentSessionId) {
+          const docRef = await addDoc(collection(db, `chatSessions/${currentUser.uid}/sessions`), {
+            title: content.substring(0, 30),
+            updatedAt: serverTimestamp(),
+            type: 'doubt'
+          });
+          currentSessionId = docRef.id;
+        }
+
+        await addDoc(collection(db, `chatSessions/${currentUser.uid}/sessions/${currentSessionId}/messages`), {
+          role: 'user',
+          content,
+          timestamp: serverTimestamp()
+        });
+        console.log("✅ [DEBUG] Firebase sync success");
+      } catch (dbErr) {
+        console.error("❌ [DEBUG] Firebase Sync Failed (Script continuing):", dbErr);
+      }
+
+      // 3. TRIGGER NETWORK CALL
+      console.log("📡 [DEBUG] TRIGGERING API CALL TO /api/chat");
+      await callChatAPI(content);
+
+    } catch (globalErr) {
+      console.error("🚨 [DEBUG] CRITICAL FRONTEND ERROR:", globalErr);
+    }
   }
 
   async function callChatAPI(userText) {
+    console.log("🌐 [DEBUG] API Call Started for:", userText);
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: userText })
       });
+      
+      console.log("📥 [DEBUG] API Status Received:", response.status);
       
       const data = await response.json();
       if (data.error) throw new Error(data.error);
 
       const aiText = data.reply;
+      console.log("🤖 [DEBUG] AI Response:", aiText);
       
+      // Save AI reply and update UI
       await addDoc(collection(db, `chatSessions/${currentUser.uid}/sessions/${currentSessionId}/messages`), {
         role: 'assistant',
         content: aiText,
         timestamp: serverTimestamp()
       });
 
-      // Update session title & timestamp
       await updateDoc(doc(db, `chatSessions/${currentUser.uid}/sessions`, currentSessionId), {
         updatedAt: serverTimestamp()
       });
+
     } catch (err) {
-      console.error("AI Error:", err);
-      appendMessageUI({ role: 'assistant', content: "Mafi chahta hoon, kuch error aaya hai. Dobara try karein.", timestamp: new Date() });
+      console.error("🌪️ [DEBUG] API/Fetch Error:", err);
+      appendMessageUI({ 
+        role: 'assistant', 
+        content: `❌ **Error:** ${err.message}. \n\n*Make sure you are running 'vercel dev' instead of Live Server!*`, 
+        timestamp: new Date() 
+      });
     }
   }
 
-  document.getElementById('send-btn').onclick = sendMessage;
-  document.getElementById('user-input').onkeypress = (e) => { if(e.key === 'Enter') sendMessage(); };
+  // EXPOSE TO WINDOW (Ensuring HTML event handlers can find it)
+  window.sendMessage = sendMessage;
+
+  // ROBUST EVENT BINDING
+  const sendBtn = document.getElementById('send-btn');
+  if (sendBtn) {
+    sendBtn.onclick = (e) => {
+      console.log("🖱️ [DEBUG] Send Button Clicked");
+      sendMessage();
+    };
+  }
+
+  const userInput = document.getElementById('user-input');
+  if (userInput) {
+    userInput.onkeypress = (e) => {
+      if (e.key === 'Enter') {
+        console.log("⌨️ [DEBUG] Enter Key Pressed");
+        sendMessage();
+      }
+    };
+  }
+
   document.getElementById('new-doubt-btn').onclick = () => {
     currentSessionId = null;
     document.getElementById('chat-container').innerHTML = `

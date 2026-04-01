@@ -1,0 +1,13 @@
+{
+  "name": "stemvi",
+  "version": "1.0.0",
+  "description": "AI-powered STEM learning platform for Indian students",
+  "main": "index.html",
+  "scripts": {
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "marked": "^11.1.1"
+  }
+}
+
