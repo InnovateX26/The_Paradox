@@ -7,6 +7,7 @@
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Playfair+Display:ital,wght@1,700;1,900&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script id="tailwind-config">
       tailwind.config = {
         darkMode: "class",
@@ -72,6 +73,22 @@
     </style>
 </head>
 <body class="bg-surface font-body text-on-surface overflow-hidden">
+<!-- On-Screen Console for Troubleshooting -->
+<div id="onscreen-console" class="fixed bottom-4 right-4 w-80 max-h-64 bg-black/90 border border-primary/20 rounded-xl z-[10000] p-4 text-[10px] font-mono overflow-y-auto hidden flex flex-col gap-2 shadow-2xl">
+    <div class="flex justify-between items-center border-b border-white/10 pb-2 mb-2">
+        <span class="text-primary font-black uppercase tracking-widest">Debug Feed</span>
+        <div class="flex gap-2">
+            <button onclick="window.testRender()" class="px-2 py-0.5 bg-primary/20 border border-primary/40 rounded text-[8px] text-primary hover:bg-primary/40">TEST RENDERING</button>
+            <button onclick="document.getElementById('onscreen-console').classList.add('hidden')" class="text-on-surface/40 hover:text-white">CLOSE</button>
+        </div>
+    </div>
+    <div id="console-output" class="space-y-1"></div>
+</div>
+<!-- Live Server Warning Banner -->
+<div id="live-server-warning" class="hidden fixed top-0 left-0 w-full bg-red-600 text-white py-2 px-4 z-[9999] text-center font-bold flex items-center justify-center gap-3">
+    <span class="material-symbols-outlined">warning</span>
+    <span>Stop! You are on Live Server (Port 5500). The AI will NOT respond. Please run <code class="bg-black/20 px-2 py-1 rounded">vercel dev</code> instead.</span>
+</div>
 <!-- TopNavBar -->
 <header class="fixed top-0 left-0 w-full z-50 bg-[#1e2511]/60 backdrop-blur-3xl border-b border-white/10">
 <nav class="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
@@ -151,7 +168,7 @@
 <!-- Main Chat Area -->
 <main class="flex-1 flex flex-col h-full bg-dark-4 relative">
 <!-- Message Feed -->
-<div class="flex-1 overflow-y-auto px-6 py-8 space-y-10 flex flex-col scroll-smooth" id="chat-container">
+<div class="flex-1 overflow-y-auto px-6 py-8 space-y-10 flex flex-col scroll-smooth" id="chatBox">
 <!-- Empty State -->
 <div class="h-full flex flex-col items-center justify-center text-center space-y-6 opacity-40">
 <div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center">
@@ -227,6 +244,23 @@
   let currentRoomId = null;
   let currentRoomTopic = "General Session";
 
+  // --- NEW: On-Screen Logger ---
+  const consoleOutput = document.getElementById('console-output');
+  const onscreenConsole = document.getElementById('onscreen-console');
+  
+  const uiLog = (msg, type = 'info') => {
+    if (!consoleOutput) return;
+    onscreenConsole.classList.remove('hidden');
+    const entry = document.createElement('div');
+    entry.className = type === 'error' ? 'text-red-400' : 'text-primary/70';
+    entry.textContent = `> [${new Date().toLocaleTimeString()}] ${msg}`;
+    consoleOutput.appendChild(entry);
+    onscreenConsole.scrollTop = onscreenConsole.scrollHeight;
+  };
+
+  // Override window errors
+  window.onerror = (msg, url, line) => uiLog(`Global Error: ${msg} at ${line}`, 'error');
+
   // --- Defensive Helper ---
   const safeSet = (id, content, isHtml = false) => {
     const el = document.getElementById(id);
@@ -277,6 +311,13 @@
           createRoom("Study Session", true); // Auto-create first room
         }
       }
+    }
+
+    // Check for Live Server (Port 5500)
+    if (window.location.port === '5500') {
+      console.warn("⚠️ [SENIOR DEBUG] Detected Live Server (Port 5500). Backend functions will NOT work.");
+      const warning = document.getElementById('live-server-warning');
+      if (warning) warning.classList.remove('hidden');
     }
   };
 
@@ -361,11 +402,12 @@
         const userIds = snap.data().activeUsers || [];
         for (const uid of userIds) {
           const uSnap = await getDoc(doc(db, "users", uid));
-          const uData = uSnap.exists() ? uSnap.data() : { name: 'Unknown' };
+          const uData = uSnap.exists() ? uSnap.data() : { name: 'Scientist' };
+          const userName = uData.name || 'Scientist';
           userContainer.insertAdjacentHTML('beforeend', `
             <div class="flex items-center gap-3 px-3 py-2 bg-white/5 rounded-xl border border-white/5">
-              <div class="w-6 h-6 rounded-lg bg-primary/20 flex items-center justify-center text-[8px] font-black text-primary">${uData.name.charAt(0).toUpperCase()}</div>
-              <span class="text-[10px] font-bold text-on-surface-variant truncate">${uData.name}</span>
+              <div class="w-6 h-6 rounded-lg bg-primary/20 flex items-center justify-center text-[8px] font-black text-primary">${userName.charAt(0).toUpperCase()}</div>
+              <span class="text-[10px] font-bold text-on-surface-variant truncate">${userName}</span>
               <div class="ms-auto w-1 h-1 bg-green-500 rounded-full animate-pulse"></div>
             </div>
           `);
@@ -375,60 +417,87 @@
   }
 
   async function joinRoom(roomId) {
+    uiLog(`🚀 Entering Room: ${roomId}`);
     currentRoomId = roomId;
     safeSet('room-id-text', `#${roomId}`);
     
-    // Fetch room details for context
-    const roomSnap = await getDoc(doc(db, "rooms", roomId));
-    if (roomSnap.exists()) {
-      currentRoomTopic = roomSnap.data().topic || "General Session";
+    // --- STEP 1: START LISTENER IMMEDIATELY (Highest Priority) ---
+    try {
+      uiLog(`📡 Starting message listener...`);
+      const q = query(collection(db, `rooms/${roomId}/messages`), orderBy("timestamp", "asc"));
+      
+      onSnapshot(q, (snapshot) => {
+        uiLog(`📥 Feed Updated: ${snapshot.docs.length} messages`);
+        const chatBox = document.getElementById('chatBox');
+        chatBox.innerHTML = '';
+        snapshot.forEach(doc => renderMessage(doc.data()));
+        chatBox.scrollTo(0, chatBox.scrollHeight);
+      }, (err) => {
+        uiLog(`❌ HUB ERROR: ${err.message}`, 'error');
+        if (err.message.includes('index')) {
+          uiLog("Fallback: Trying without sorting...", 'info');
+          const fallbackQ = query(collection(db, `rooms/${roomId}/messages`));
+          onSnapshot(fallbackQ, (s) => {
+            uiLog(`📥 Fallback Feed: ${s.docs.length} messages`);
+            const chatBox = document.getElementById('chatBox');
+            chatBox.innerHTML = '';
+            s.forEach(d => renderMessage(d.data()));
+            chatBox.scrollTo(0, chatBox.scrollHeight);
+          });
+        }
+      });
+    } catch (listenErr) {
+      uiLog(`🚨 Initialization Crash: ${listenErr.message}`, 'error');
     }
 
-    await updateDoc(doc(db, "rooms", roomId), {
-      activeUsers: arrayUnion(currentUser.uid)
-    });
-    
-    await updateDoc(doc(db, "users", currentUser.uid), {
-      lastActiveRoom: roomId
-    });
-
-    listenToUsers(roomId);
-
-    const q = query(collection(db, `rooms/${roomId}/messages`), orderBy("timestamp", "asc"));
-    onSnapshot(q, (snapshot) => {
-      const chatContainer = document.getElementById('chat-container');
-      if (chatContainer.querySelector('.opacity-40')) chatContainer.innerHTML = '';
-      
-      // Handle initial load vs real-time additions
-      if (snapshot.docChanges().length > snapshot.docs.length / 2) {
-        chatContainer.innerHTML = '';
-        snapshot.forEach(doc => appendMessageUI(doc.data()));
-      } else {
-        snapshot.docChanges().forEach(change => {
-          if (change.type === "added") appendMessageUI(change.doc.data());
-        });
+    // --- STEP 2: METADATA & STATUS (Lower Priority) ---
+    try {
+      const roomRef = doc(db, "rooms", roomId);
+      const roomSnap = await getDoc(roomRef);
+      if (roomSnap.exists()) {
+        currentRoomTopic = roomSnap.data().topic || "General Session";
+        uiLog(`✅ Room Loaded: ${currentRoomTopic}`);
       }
-      chatContainer.scrollTo(0, chatContainer.scrollHeight);
-    });
+
+      // Use setDoc with merge to avoid "No document to update" errors
+      await setDoc(roomRef, {
+        activeUsers: arrayUnion(currentUser.uid)
+      }, { merge: true });
+      
+      uiLog(`👤 Status: Online`);
+      
+      const userRef = doc(db, "users", currentUser.uid);
+      await setDoc(userRef, {
+        lastActiveRoom: roomId
+      }, { merge: true });
+
+      listenToUsers(roomId);
+    } catch (statusErr) {
+      uiLog(`⚠️ Status update failed: ${statusErr.message}`);
+      // Don't return, we still want the listener above to work
+    }
   }
 
-  function appendMessageUI(msg) {
-    const container = document.getElementById('chat-container');
+  // --- SENIOR FIX: Centralized Rendering Function ---
+  function renderMessage(msg) {
+    const container = document.getElementById('chatBox');
+    if (!container) return;
+
     const isUser = msg.senderId === currentUser.uid;
     const isAi = msg.senderId === 'system-ai';
     
-    // Clear initial state if first message
-    if (container.querySelector('.opacity-40')) container.innerHTML = '';
+    console.log("Rendering:", msg.content);
 
     let html = '';
     if (isAi) {
+      const formattedContent = typeof marked !== 'undefined' ? marked.parse(msg.content) : msg.content;
       html = `
         <div class="flex items-start gap-5 max-w-2xl message-in">
           <div class="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0 border border-primary/20">
             <span class="material-symbols-outlined text-primary text-xl" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
           </div>
-          <div class="bot-bubble-glass p-6 rounded-2xl rounded-tl-none relative">
-            <p class="text-sm leading-relaxed text-on-surface font-medium">${msg.content}</p>
+          <div class="bot-bubble-glass p-6 rounded-2xl rounded-tl-none relative prose prose-invert prose-sm">
+            ${formattedContent}
             <div class="absolute -left-2 top-0 w-4 h-4 bg-transparent border-t-[12px] border-t-primary/10 border-r-[12px] border-r-transparent"></div>
           </div>
         </div>
@@ -448,6 +517,26 @@
     container.insertAdjacentHTML('beforeend', html);
   }
 
+  // --- NEW: Render Test Function ---
+  window.testRender = () => {
+    uiLog("🚀 Manual Render Test Started...");
+    const chatBox = document.getElementById('chatBox');
+    if (!chatBox) {
+        uiLog("Error: chatBox element not found!", 'error');
+        return;
+    }
+    // Remove empty state if present
+    if (chatBox.querySelector('.opacity-40')) chatBox.innerHTML = '';
+    
+    renderMessage({
+        senderId: 'system-ai',
+        senderName: 'Room-Bot',
+        content: '### Rendering Test\nIf you see this, the **UI is working** and we have a Firestore sync issue.'
+    });
+    chatBox.scrollTo(0, chatBox.scrollHeight);
+    uiLog("Test message appended to DOM.");
+  };
+
   // --- Quick Replies ---
   document.querySelectorAll('.btn-hover-scale').forEach(btn => {
     if (btn.id === 'next-btn' || btn.id === 'prev-btn' || btn.tagName === 'INPUT') return;
@@ -460,30 +549,30 @@
     };
   });
 
-  window.sendMessage = async () => {
-    console.log("🖱️ [DEBUG] Button clicked: sendMessage");
-    const input = document.getElementById('messageInput');
-    const chatContainer = document.getElementById('chat-container');
+  let loading = false;
 
-    if (!input) {
-        console.error("❌ [DEBUG] messageInput not found!");
-        return;
-    }
+  window.sendMessage = async () => {
+    uiLog("Attempting to send message...");
+    const input = document.getElementById('messageInput');
+    const chatBox = document.getElementById('chatBox');
+
+    if (!input || !chatBox || loading) return;
 
     const content = input.value.trim();
     if (!content) return;
     
     if (!currentRoomId) {
-        console.error("❌ [DEBUG] No currentRoomId! Cannot send.");
         alert("Wait for room connect...");
         return;
     }
 
+    loading = true;
     console.log("💬 [DEBUG] Sending message:", content);
 
     // --- Command Support (Detection) ---
     if (content.toLowerCase().includes('addnew room')) {
       input.value = '';
+      loading = false;
       createRoom();
       return;
     }
@@ -502,45 +591,96 @@
 
       // 3. AI Trigger (if needed)
       if (content.toLowerCase().includes('@bot')) {
-        handleBotResponse(content);
+        await handleBotResponse(content);
       }
     } catch (err) {
-      console.error("🚨 [DEBUG] Send message error:", err);
+      console.error("🚨 [DEBUG] Error:", err);
+    } finally {
+      loading = false;
     }
-  }
+  };
 
   async function handleBotResponse(text) {
-    console.log("🛰️ [DEBUG] Calling Room API for bot response...");
-    const indicator = document.getElementById('typing-indicator');
+    uiLog("AI Trigger detected (@bot)");
+    const chatBox = document.getElementById('chatBox');
     
-    try {
-      if (indicator) indicator.classList.remove('hidden');
+    // 1. ADD LOADING (Safe check to avoid duplicates)
+    document.getElementById("loading")?.remove();
+    chatBox.insertAdjacentHTML('beforeend', `
+      <div id="loading" class="flex items-start gap-5 max-w-2xl message-in opacity-50">
+        <div class="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0 animate-pulse">
+            <span class="material-symbols-outlined text-primary text-xl">smart_toy</span>
+        </div>
+        <div class="bot-bubble-glass p-6 rounded-2xl rounded-tl-none">
+            <p class="text-sm font-black text-primary animate-pulse uppercase tracking-widest text-[10px]">AI is thinking...</p>
+        </div>
+      </div>
+    `);
+    chatBox.scrollTo(0, chatBox.scrollHeight);
 
-      const response = await fetch("/api/chat-room", {
+    try {
+      const apiUrl = `/api/chat-room`;
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+      const response = await fetch(apiUrl, {
         method: "POST",
+        signal: controller.signal,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          topic: currentRoomTopic,
-          roomId: currentRoomId,
-          message: text
-        })
+        body: JSON.stringify({ message: text })
       });
+      clearTimeout(timeoutId);
 
       const data = await response.json();
-      console.log("📦 [DEBUG] API response:", data);
+      uiLog("API Response received");
+      console.log("API RESPONSE:", data);
 
-      if (data.reply) {
+      // 2. ALWAYS REMOVE LOADING
+      document.getElementById("loading")?.remove();
+
+      if (!response.ok) {
+        uiLog(`API Error: ${response.status}`, 'error');
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      // 3. SAFE DISPLAY (Fallback)
+      const reply = data?.reply || data?.message || "AI returned empty response.";
+      uiLog("Saving bot reply to Firestore...");
+
+      // 4. SAVE TO FIRESTORE (Group sync)
+      try {
         await addDoc(collection(db, `rooms/${currentRoomId}/messages`), {
           senderId: 'system-ai',
           senderName: 'Room-Bot',
-          content: data.reply,
+          content: reply,
           timestamp: serverTimestamp()
         });
+        uiLog("Success: Reply synced.");
+      } catch (dbErr) {
+        uiLog(`Firestore Save Error: ${dbErr.message}`, 'error');
+        throw dbErr;
       }
+
     } catch (err) {
-      console.error("🌪️ [DEBUG] Bot response error:", err);
-    } finally {
-      if (indicator) indicator.classList.add('hidden');
+      uiLog(`Bot Error: ${err.message}`, 'error');
+      console.error("🌪️ Bot Error:", err);
+      // ALWAYS REMOVE LOADING
+      document.getElementById("loading")?.remove();
+      
+      const isTimeout = err.name === 'AbortError';
+      const errorMsg = isTimeout ? "AI timed out (60s)." : `Error: ${err.message}`;
+
+      // This manual render is a fallback for errors only.
+      // Real responses come through Firestore.
+      chatBox.insertAdjacentHTML('beforeend', `
+        <div class="flex justify-center my-4 diagnostics-msg">
+          <div class="px-4 py-2 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-[10px] font-black uppercase tracking-widest text-center">
+            System Error: ${errorMsg}
+          </div>
+        </div>
+      `);
+      chatBox.scrollTo(0, chatBox.scrollHeight);
     }
   }
 
