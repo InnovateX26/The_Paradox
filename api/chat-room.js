@@ -8,17 +8,14 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { message, roomId, topic } = req.body;
-  console.log("🚀 [DEBUG] Received message for room:", roomId);
-
-  if (!message) return res.status(400).json({ error: 'Message is required' });
 
   try {
-    // If not a bot mention, just return (or handle logging)
-    if (!message.toLowerCase().includes('@bot')) {
-      return res.status(200).json({ reply: null });
-    }
+    // 1. INPUT LOGGING
+    console.log("🚀 Incoming message:", message);
+    if (!message) return res.status(200).json({ reply: "Message is empty!" });
 
-    console.log("🤖 [DEBUG] Calling OpenRouter API...");
+    // 2. SENDING TO AI
+    console.log("📡 Sending to AI...");
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -32,25 +29,47 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "system",
-            content: `You are STEMVI Room Bot, a helpful academic assistant for room: ${roomId}.
-            Topic: ${topic || "General Study"}.
-            Rules: Use simple Hinglish where helpful, keep it concise, and use step-by-step numbering. 🎯`
+            content: "You are a friendly teacher! Explain in simple Hinglish, keep it step-by-step, and be helpful."
           },
-          { role: "user", content: message }
-        ],
-        max_tokens: 1000
+          {
+            role: "user",
+            content: message
+          }
+        ]
       })
     });
 
-    const data = await response.json();
-    console.log("📥 [DEBUG] API raw response received");
+    // 3. CRITICAL STATUS CHECK
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ OpenRouter API ERROR:", errorText);
+        return res.status(200).json({
+          reply: "AI failed to respond. Check API key or credits."
+        });
+    }
 
-    const botReply = data?.choices?.[0]?.message?.content || "Scientist, I'm currently recalibrating. Please try again! 🧪";
-    
-    res.status(200).json({ reply: botReply });
+    // 4. SAFE JSON PARSE
+    const data = await response.json();
+    console.log("📥 AI raw response:", JSON.stringify(data));
+
+    const reply = data?.choices?.[0]?.message?.content;
+
+    // 5. EMPTY REPLY CHECK
+    if (!reply) {
+      console.warn("⚠️ AI returned empty response.");
+      return res.status(200).json({
+        reply: "AI returned empty response."
+      });
+    }
+
+    // 6. FINAL SUCCESSFUL RESPONSE
+    return res.status(200).json({ reply });
 
   } catch (err) {
-    console.error('🚨 [DEBUG] Chat-Room API Error:', err);
-    res.status(500).json({ error: 'Internal Server Error', details: err.message });
+    // 7. FULL ERROR HANDLING
+    console.error("🚨 SERVER ERROR:", err);
+    return res.status(200).json({
+      reply: "Server crashed. Check terminal logs."
+    });
   }
 }
