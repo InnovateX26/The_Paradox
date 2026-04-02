@@ -34,28 +34,26 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "system",
-            content: `You are an elite AI tutor for Indian students (JEE/NEET level). 
-            Your goal is to make answers engaging, memorable, and student-friendly by adding mnemonics, emojis, and memory tricks.
+            content: `You are 'StemVI Buddy', a friendly and smart senior friend helping students in a group study room. 
             
-            STRUCTURE RULES:
-            1. 📌 Definition (English): 1–2 line professional definition.
-            2. 🧠 Easy Hinglish Explanation: Relatable explanation with Indian context.
-            3. ⚡ Key Points: Bullet points with **bold keywords**.
-            4. 📊 Visuals (Diagram/Flowchart): 
-               - For simple: Use text arrows (Start -> Process -> End).
-               - For complex: Use \`\`\`mermaid code blocks.
-            5. 📈 Example: Desi/Indian real-life example.
-            6. 🎨 Formula / Equation (if applicable): Clear separate line.
-            7. 🎯 Important for Exams: Short revision tips.
-            8. 🧩 Mnemonic (if possible): Acronyms or funny memory tricks. 
-            9. 🔁 Quick Revision Line: One-line summary.
-
-            STYLE RULES:
-            - Use spacing between sections.
-            - Do NOT write long paragraphs.
-            - Use bullet points.
-            - Max 1 emoji per section (header only).
-            - Highlight key terms using **bold formatting**.`
+            TONE & PERSONALITY:
+            - Be encouraging, warm, and student-friendly. Use Hinglish naturally.
+            - Act like a 'Bade Bhaiya/Didi' who makes complex topics easy.
+            - Use friendly greetings like "Hey guys!", "Great catch!", or "Let's crack this together!".
+            
+            CORE RULE: 
+            - Keep responses concise but NOT robotic. 
+            - Explain simply. Use a bit of humor/relatability if it fits.
+            
+            STRUCTURE:
+            1. 👋 Friendly Greeting: 1 short sentence.
+            2. 🧠 Easy Explanation: Simple Hinglish breakdown.
+            3. ⚡ Smart Trick: 1 core bullet/mnemonic.
+            4. 🚀 Motivation: A quick encouraging line.
+            
+            STYLE:
+            - Highlight key terms with **bold formatting**.
+            - Use 3-4 emojis to keep the vibe friendly.`
           },
           {
             role: "user",
@@ -66,41 +64,55 @@ export default async function handler(req, res) {
     });
     clearTimeout(timeoutId);
 
-    // 3. CRITICAL STATUS CHECK
     if (!response.ok) {
-      const errText = await response.text();
-      console.error(`❌ OpenRouter API ERROR [${response.status}]:`, errText);
-
-      return res.status(200).json({
-        reply: `AI failed to respond (Status ${response.status}). Please check system logs.`
-      });
+       console.warn(`⚠️ Room AI Warning: OpenRouter Status ${response.status}. Trying Gemini Fallback...`);
+       throw new Error(`OpenRouter Error: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log("📥 AI RAW:", JSON.stringify(data));
-
     const reply = data?.choices?.[0]?.message?.content;
 
-    if (!reply) {
-      return res.status(200).json({
-        reply: "AI returned empty response."
-      });
-    }
+    if (!reply) throw new Error("Empty response from OpenRouter");
 
-    return res.status(200).json({ 
-      reply, 
-      message: reply 
-    });
+    return res.status(200).json({ reply, message: reply });
 
   } catch (err) {
-    // 4. FULL ERROR HANDLING
     const isTimeout = err.name === 'AbortError';
-    console.error(isTimeout ? "⏳ AI TIMEOUT (60s)" : "🚨 SERVER ERROR:", err);
-    
-    const msg = isTimeout ? "AI request timed out (60s)." : err.message;
+    console.error("🚨 Fallback Triggered:", err.message);
 
-    return res.status(200).json({
-      reply: `System Error: ${msg}`
-    });
+    // --- SECONDARY CALL: GOOGLE GEMINI BACKUP ---
+    try {
+      console.log("🚀 [BACKUP] Calling Gemini 2.5 Flash...");
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
+      
+      const geminiRes = await fetch(geminiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{
+            role: "user",
+            parts: [{ text: `You are 'StemVI Buddy', a friendly smart senior friend in a group study room. Be encouraging and use warm Hinglish. 
+              Respond in this structure: 👋 Greeting, 🧠 Easy Explanation, ⚡ Smart Trick, 🚀 Motivation.
+              
+              Student says: ${message}` }]
+          }]
+        })
+      });
+
+      const geminiData = await geminiRes.json();
+      const reply = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+      
+      if (reply) {
+        console.log("✅ [ROOM BACKUP] Gemini Success!");
+        return res.status(200).json({ reply, message: reply });
+      } else {
+        throw new Error("Gemini fallback failed.");
+      }
+    } catch (fallbackErr) {
+      console.error('❌ CRITICAL ROOM FAILURE:', fallbackErr.message);
+      return res.status(200).json({
+        reply: `AI is currently resting (Low Credits). Please try again later or ping the developer to top up credits! (Code: 402)`
+      });
+    }
   }
 }

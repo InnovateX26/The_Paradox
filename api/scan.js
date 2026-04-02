@@ -25,50 +25,77 @@ export default async function handler(req, res) {
         model: "openai/gpt-4o-mini",
         messages: [
           {
-            role: "system",
-            content: `You are an elite AI tutor for Indian students (JEE/NEET level). 
-            Your goal is to make answers engaging, memorable, and student-friendly by adding mnemonics, emojis, and memory tricks.
-            
-            STRUCTURE RULES:
-            1. 📌 Definition (English): 1–2 line professional definition.
-            2. 🧠 Easy Hinglish Explanation: Relatable explanation with Indian context.
-            3. ⚡ Key Points: Bullet points with **bold keywords**.
-            4. 📊 Visuals (Diagram/Flowchart): 
-               - For simple: Use text arrows (Start -> Process -> End).
-               - For complex: Use \`\`\`mermaid code blocks.
-            5. 📈 Example: Desi/Indian real-life example.
-            6. 🎨 Formula / Equation (if applicable): Clear separate line.
-            7. 🎯 Important for Exams: Short revision tips.
-            8. 🧩 Mnemonic (if possible): Acronyms or funny memory tricks. 
-            9. 🔁 Quick Revision Line: One-line summary.
-
-            STYLE RULES:
-            - Use spacing between sections.
-            - Do NOT write long paragraphs.
-            - Use bullet points.
-            - Max 1 emoji per section (header only).
-            - Highlight key terms using **bold formatting**.`
-          },
-          {
             role: "user",
-            content: `Explain this content using the 8-section Memory-Optimized structure:
+            content: `Identify the Subject (Physics, Chemistry, Maths, Biology, or Computer) and a short Topic name from this text. Also provide a detailed explanation using the 8-section Memory-Optimized structure.
             
-            Content:
+            Return ONLY a JSON object:
+            {
+              "subject": "Name of Subject",
+              "topic": "Name of Topic",
+              "explanation": "Markdown text with 📌 Definition, 🧠 Easy Hinglish Explanation, ⚡ Key Points, 📊 Visuals, 📈 Example, 🎨 Formula, 🎯 Important for Exams, 🧩 Mnemonic, 🔁 Quick Revision Line"
+            }
+            
+            Text to analyze:
             ${text}`
           }
         ],
+        response_format: { type: "json_object" },
         max_tokens: 1500
       })
     });
 
-    const data = await response.json();
-    if (data.error) throw new Error(data.error.message || 'OpenRouter API Error');
+    if (!response.ok) {
+       console.warn(`⚠️ Scan AI Warning: OpenRouter Status ${response.status}. Trying Gemini Fallback...`);
+       throw new Error(`OpenRouter Error: ${response.status}`);
+    }
 
-    const explanation = data.choices?.[0]?.message?.content || "No explanation could be generated.";
-    res.status(200).json({ explanation });
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) throw new Error("Empty response from AI");
+
+    const parsed = JSON.parse(content);
+    return res.status(200).json(parsed);
 
   } catch (err) {
-    console.error('Scan API Error:', err);
-    res.status(500).json({ error: 'Internal Server Error', details: err.message });
+    console.error('Scan API Warning (Attempting Fallback):', err.message);
+    
+    // --- SECONDARY CALL: GOOGLE GEMINI BACKUP ---
+    try {
+      console.log("🚀 [SCAN BACKUP] Calling Gemini 2.5 Flash...");
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
+      
+      const geminiRes = await fetch(geminiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{
+            role: "user",
+            parts: [{ text: `Identify the Subject (Physics, Chemistry, Maths, Biology, or Computer) and a short Topic name. Also explain the text. Respond ONLY in valid JSON format:
+              { "subject": "...", "topic": "...", "explanation": "..." }. 
+              
+              Text: ${text}` }]
+          }]
+        })
+      });
+
+      const geminiData = await geminiRes.json();
+      const reply = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+      
+      if (reply) {
+        console.log("✅ [SCAN BACKUP] Gemini Success!");
+        const cleanReply = reply.replace(/```json|```/g, "").trim();
+        const parsed = JSON.parse(cleanReply);
+        return res.status(200).json(parsed);
+      } else {
+        throw new Error("Gemini fallback failed.");
+      }
+    } catch (fallbackErr) {
+      console.error('❌ CRITICAL SCAN FAILURE:', fallbackErr.message);
+      return res.status(200).json({ 
+        explanation: "AI is currently resting (Low Credits). Please try again later or ping the developer to top up credits! (Code: 402)",
+        subject: "General",
+        topic: "Error Handle"
+      });
+    }
   }
 }

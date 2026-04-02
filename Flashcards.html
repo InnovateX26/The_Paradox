@@ -232,7 +232,7 @@
                     <!-- Standardized Macro-Segment Generator -->
                     <div class="flashcard-front">
                         <div class="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-4" id="card-subject">Physics</div>
-                        <h2 class="text-2xl font-black leading-tight text-primary uppercase tracking-tight mb-4" id="card-title">Topic Name</h2>
+                        <h2 class="text-5xl font-black leading-tight text-primary uppercase tracking-tight mb-6" id="card-title">Topic Name</h2>
                         
                         <div class="scroll-content w-full space-y-6">
                             <div id="seg-def-en">
@@ -393,43 +393,55 @@
             return text.replace(/\s+/g, " ").trim();
         };
 
-        initAuthGuard(auth);
+  // --- Defensive Helper ---
+  const safeSet = (id, content, isHtml = false) => {
+      const el = document.getElementById(id);
+      if (!el) {
+          console.error(`❌ [DEBUG] DOM Element missing: #${id}`);
+          return null;
+      }
+      if (isHtml) el.innerHTML = content;
+      else el.textContent = content;
+      return el;
+  };
 
-        // --- Defensive Helper ---
-        const safeSet = (id, content, isHtml = false) => {
-            const el = document.getElementById(id);
-            if (!el) {
-                console.error(`❌ [DEBUG] DOM Element missing: #${id}`);
-                return null;
-            }
-            if (isHtml) el.innerHTML = content;
-            else el.textContent = content;
-            return el;
-        };
+  const logoutBtns = ['sign-out-btn', 'sidebar-logout-btn'];
+  logoutBtns.forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) btn.addEventListener('click', () => handleSignOut(auth));
+  });
 
-        const logoutBtns = ['sign-out-btn', 'sidebar-logout-btn'];
-        logoutBtns.forEach(id => {
-            const btn = document.getElementById(id);
-            if (btn) btn.addEventListener('click', () => handleSignOut(auth));
-        });
+  window.initPage = async (user) => {
+      console.log("🚀 [DEBUG] Flashcards initPage started for:", user.email);
+      currentUser = user;
+      
+      try {
+          loadFlashcards();
+          
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists()) {
+              const userData = userDoc.data();
+              safeSet('user-name-display', userData.name || 'Student');
+              safeSet('user-email-display', user.email || 'authenticated user');
+              safeSet('user-avatar-initial', (userData.name || 'S').charAt(0).toUpperCase());
+          } else {
+              safeSet('user-name-display', 'Student');
+              safeSet('user-email-display', user.email || 'authenticated user');
+              safeSet('user-avatar-initial', 'S');
+          }
+      } catch (err) {
+          console.error("❌ [DEBUG] Flashcards initPage failed:", err);
+      }
 
-        window.initPage = async (user) => {
-            currentUser = user;
-            loadFlashcards();
-            
-            const userDoc = await getDoc(doc(db, "users", user.uid));
-            if (userDoc.exists()) {
-                const userData = userDoc.data();
-                safeSet('user-name-display', userData.name || 'Student');
-                safeSet('user-email-display', user.email || 'authenticated user');
-                safeSet('user-avatar-initial', (userData.name || 'S').charAt(0).toUpperCase());
-            }
+      if (window.location.port === '5500') {
+          const warning = document.getElementById('live-server-warning');
+          if (warning) warning.classList.remove('hidden');
+      }
+  };
 
-            if (window.location.port === '5500') {
-                const warning = document.getElementById('live-server-warning');
-                if (warning) warning.classList.remove('hidden');
-            }
-        };
+  // Trigger Auth Observer
+  console.log("🛡️ [DEBUG] Starting Auth Guard...");
+  initAuthGuard(auth);
 
         async function loadFlashcards() {
             const q = query(collection(db, `flashcards/${currentUser.uid}/cards`), orderBy("createdAt", "desc"));

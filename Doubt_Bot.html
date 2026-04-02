@@ -150,6 +150,26 @@
             border-left: 4px solid #9AB17A;
             box-shadow: 0 10px 30px -10px rgba(0,0,0,0.3);
             animation: fadeInPremium 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #cbd5c0; /* Better readability */
+            line-height: 1.8;
+            font-size: 14px;
+        }
+
+        .ai-heading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            color: #FBE8CE; /* Cream highlight */
+            font-size: 17px;
+            margin-top: 24px;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+            border-left: 3px solid #9AB17A;
+            padding-left: 12px;
+            margin-left: -24px; /* Align with padding */
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            text-transform: none; /* Keep original look */
         }
 
         .ai-message h3 {
@@ -361,80 +381,148 @@
     return el;
   };
 
-  // --- PREMIUM RESPONSE FORMATTER (v3 Hybrid) ---
+  // --- CLEANUP FUNCTION (v2 Requested Fix) ---
+  function cleanAIText(text) {
+    if (!text) return "";
+    return text
+      // 1. Better Approach: Convert Bold tags
+      .replace(/\*\*(.*?)\*\*/g, '<b class="text-primary font-black">$1</b>')
+      // 2. Clear remaining single asterisks (italics or bullet fillers)
+      .replace(/\*/g, '')
+      // 3. Remove stray triple backticks if they appear in text bodies
+      .replace(/```[a-z]*/g, '')
+      .trim();
+  }
+
+  // --- PREMIUM RESPONSE FORMATTER (v4 Hybrid) ---
   function formatAIResponse(text) {
     if (!text) return '';
     
-    // 1. Initial Cleanup: Ensure no stray characters break the rendering
+    // 1. Initial cleanup
     let cleanText = text.trim();
 
-    // 2. Handle 📌, 🧠, ⚡, 📊, 📐, 🎯, 🔁, 🧩 as headers
-    // Using a broad emoji-aware regex: Match any emoji followed by a space and a title
-    const emojiHeaderRegex = /^([\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}])\s*(.*)$/gm;
-    
-    // We replace headers first, but we leave the content inside headers as markdown-ready
-    let formatted = cleanText.replace(emojiHeaderRegex, (match, emoji, title) => {
-        return `<h3 class="flex items-center gap-2 text-primary font-black uppercase text-xs tracking-widest mt-8 mb-4 border-l-2 border-primary/20 pl-4">${emoji} ${title.replace(/\*/g, '')}</h3>`;
+    // 2. Extract and format Mermaid/Code blocks first (don't clean inside these)
+    const codeBlocks = [];
+    cleanText = cleanText.replace(/```([\s\S]*?)```/g, (match, code) => {
+        const id = `__CODE_BLOCK_${codeBlocks.length}__`;
+        codeBlocks.push(match);
+        return id;
     });
 
-    // 3. Let Marked handle the rest (bold, links, code blocks, etc.)
-    return marked.parse(formatted);
+    // 3. Handle Emoji Headers (v3 Regex) - Enhanced to split content at first colon
+    const emojiHeaderRegex = /^([\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}])\s*(.*)$/gum;
+    let formatted = cleanText.replace(emojiHeaderRegex, (match, emoji, title) => {
+        // Clean the title
+        let cleanTitle = title.replace(/\*\*/g, '').replace(/\*/g, '').trim();
+        
+        // --- SENIOR FIX: Split at first colon to start content on next line ---
+        const colonIndex = cleanTitle.indexOf(':');
+        if (colonIndex !== -1) {
+            const headingContent = cleanTitle.substring(0, colonIndex).trim();
+            const bodyContent = cleanTitle.substring(colonIndex + 1).trim();
+            
+            // Return heading followed by the content (marked will handle the paragraph)
+            return `<h3 class="ai-heading">${emoji} ${headingContent}</h3>\n${bodyContent}`;
+        }
+        
+        return `<h3 class="ai-heading">${emoji} ${cleanTitle}</h3>`;
+    });
+
+    // 4. Apply cleanAIText to the non-header body text
+    // We split by our header tags to only clean the content between them
+    const segments = formatted.split(/(<h3.*?<\/h3>)/);
+    formatted = segments.map(seg => {
+        if (seg.startsWith('<h3')) return seg;
+        return cleanAIText(seg);
+    }).join('');
+
+    // 5. Re-insert Code Blocks
+    codeBlocks.forEach((block, i) => {
+        formatted = formatted.replace(`__CODE_BLOCK_${i}__`, marked.parse(block));
+    });
+
+    // 6. Final marked pass for any remaining lists/links
+    return formatted; // We've manually handled bold/cleaning now
   }
 
-  initAuthGuard(auth);
-  
+  // --- Page Initialization (Senior Fix: Define window.initPage BEFORE initAuthGuard) ---
+  window.initPage = async (user) => {
+    console.log("🚀 [DEBUG] initPage started for:", user.email);
+    currentUser = user;
+    
+    try {
+        // 1. Load sidebar sessions
+        loadSessions(user.uid);
+        
+        // 2. Set user basic info
+        safeSet('user-email-display', user.email);
+        
+        // 3. Fetch full profile from Firestore
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          safeSet('user-name-display', userData.name || 'Student');
+          safeSet('user-avatar-initial', (userData.name || 'S').charAt(0).toUpperCase());
+        } else {
+          safeSet('user-name-display', 'Student');
+          safeSet('user-avatar-initial', 'S');
+        }
+    } catch (err) {
+        console.error("❌ [DEBUG] initPage failed:", err);
+    }
+
+    // Check for Live Server (Port 5500)
+    if (window.location.port === '5500') {
+      console.warn("⚠️ [SENIOR DEBUG] Detected Live Server (Port 5500). Backend functions will NOT work.");
+      const warning = document.getElementById('live-server-warning');
+      if (warning) warning.classList.remove('hidden');
+    }
+  };
+
   const logoutBtns = ['sign-out-btn', 'sidebar-logout-btn'];
   logoutBtns.forEach(id => {
     const btn = document.getElementById(id);
     if (btn) btn.addEventListener('click', () => handleSignOut(auth));
   });
 
-  window.initPage = async (user) => {
-    currentUser = user;
-    loadSessions(user.uid);
-    
-    safeSet('user-email-display', user.email);
-    
-    const userDoc = await getDoc(doc(db, "users", user.uid));
-    if (userDoc.exists()) {
-      const userData = userDoc.data();
-      safeSet('user-name-display', userData.name || 'User');
-      safeSet('user-avatar-initial', (userData.name || 'U').charAt(0).toUpperCase());
-    }
-
-    // Check for Live Server (Port 5500)
-    if (window.location.port === '5500') {
-      console.warn("⚠️ [SENIOR DEBUG] Detected Live Server (Port 5500). Backend functions will NOT work.");
-      document.getElementById('live-server-warning').classList.remove('hidden');
-    }
-  };
+  // Trigger Auth Observer
+  console.log("🛡️ [DEBUG] Starting Auth Guard...");
+  initAuthGuard(auth);
 
   async function loadSessions(uid) {
-    const q = query(collection(db, `chatSessions/${uid}/sessions`), orderBy("updatedAt", "desc"), limit(10));
-    const querySnapshot = await getDocs(q);
+    console.log("📥 [DEBUG] loadSessions() invoked");
     const container = document.getElementById('sessions-container');
-    container.innerHTML = '';
-    
-    if (querySnapshot.empty) {
-      container.innerHTML = '<p class="text-on-surface-variant text-[10px] p-4 uppercase font-black tracking-widest opacity-40 text-center">No history yet</p>';
-      return;
-    }
+    if (!container) return;
 
-    querySnapshot.forEach(doc => {
-      const data = doc.data();
-      const div = document.createElement('div');
-      const isActive = doc.id === currentSessionId;
-      div.className = `p-4 ${isActive ? 'bg-primary text-dark' : 'text-on-surface-variant hover:bg-white/5'} rounded-xl flex items-start gap-4 transition-all duration-300 cursor-pointer group`;
-      div.innerHTML = `
-        <span class="material-symbols-outlined text-sm ${isActive ? 'text-dark' : 'text-primary'}">${data.type === 'room' ? 'groups' : 'history'}</span>
-        <div class="overflow-hidden">
-          <p class="font-headline font-black text-xs uppercase tracking-tight truncate">${data.title || 'Untitled Session'}</p>
-          <p class="text-[10px] ${isActive ? 'text-dark/60' : 'text-on-surface-variant/40'} font-bold mt-1">${timeAgo(data.updatedAt)}</p>
-        </div>
-      `;
-      div.onclick = () => selectSession(doc.id);
-      container.appendChild(div);
-    });
+    try {
+        const q = query(collection(db, `chatSessions/${uid}/sessions`), orderBy("updatedAt", "desc"), limit(10));
+        const querySnapshot = await getDocs(q);
+        container.innerHTML = '';
+        
+        if (querySnapshot.empty) {
+          container.innerHTML = '<p class="text-on-surface-variant text-[10px] p-4 uppercase font-black tracking-widest opacity-40 text-center">No history yet</p>';
+          return;
+        }
+
+        querySnapshot.forEach(doc => {
+          const data = doc.data();
+          const div = document.createElement('div');
+          const isActive = doc.id === currentSessionId;
+          div.className = `p-4 ${isActive ? 'bg-primary text-dark' : 'text-on-surface-variant hover:bg-white/5'} rounded-xl flex items-start gap-4 transition-all duration-300 cursor-pointer group`;
+          div.innerHTML = `
+            <span class="material-symbols-outlined text-sm ${isActive ? 'text-dark' : 'text-primary'}">${data.type === 'room' ? 'groups' : 'history'}</span>
+            <div class="overflow-hidden">
+              <p class="font-headline font-black text-xs uppercase tracking-tight truncate">${data.title || 'Untitled Session'}</p>
+              <p class="text-[10px] ${isActive ? 'text-dark/60' : 'text-on-surface-variant/40'} font-bold mt-1">${timeAgo(data.updatedAt)}</p>
+            </div>
+          `;
+          div.onclick = () => selectSession(doc.id);
+          container.appendChild(div);
+        });
+    } catch (err) {
+        console.error("❌ [DEBUG] loadSessions error:", err);
+        container.innerHTML = '<p class="text-red-400 text-[10px] p-4 uppercase font-black tracking-widest opacity-40 text-center">Failed to load history</p>';
+    }
   }
 
   async function selectSession(sessionId) {
@@ -453,32 +541,32 @@
         chatContainer.innerHTML = '<p class="text-on-surface-variant text-sm italic text-center pt-20">No messages yet. Ask something!</p>';
       }
       snapshot.forEach(doc => {
-        appendMessageUI(doc.data());
+        appendMessageUI({ id: doc.id, ...doc.data() });
       });
       chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
     });
     loadSessions(currentUser.uid);
   }
 
-  async function appendMessageUI(msg) {
+  async function appendMessageUI(data) {
     const container = document.getElementById('chat-container');
-    const isUser = msg.role === 'user';
+    const isUser = data.role === 'user';
+    const isTyping = data.isTyping;
+    
+    const div = document.createElement('div');
+    if (isTyping) div.id = 'typing-indicator';
     
     if (isUser) {
-      const html = `
-        <div class="flex flex-col items-end gap-2 max-w-2xl ml-auto animate-message-right">
-          <div class="bg-primary text-dark px-8 py-5 rounded-2xl rounded-tr-none shadow-xl font-medium">
-            <p class="text-sm leading-relaxed">${msg.content}</p>
-          </div>
-          <span class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 mr-2">${timeAgo(msg.timestamp)}</span>
+      div.className = "flex flex-col items-end gap-2 max-w-2xl ml-auto animate-message-right";
+      div.innerHTML = `
+        <div class="bg-primary text-dark px-8 py-5 rounded-2xl rounded-tr-none shadow-xl font-medium">
+          <p class="text-sm leading-relaxed">${data.content}</p>
         </div>
+        <span class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 mr-2">${timeAgo(data.timestamp)}</span>
       `;
-      container.insertAdjacentHTML('beforeend', html);
     } else {
-      // AI MESSAGE RENDERING (Premium Format)
-      const aiDiv = document.createElement('div');
-      aiDiv.className = "flex flex-col items-start gap-5 max-w-3xl animate-message-left";
-      aiDiv.innerHTML = `
+      div.className = "flex flex-col items-start gap-5 max-w-3xl animate-message-left";
+      div.innerHTML = `
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border border-white/5">
             <span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
@@ -486,20 +574,76 @@
           <span class="text-[10px] font-black uppercase tracking-widest text-primary">Lab Assistant</span>
         </div>
         <div class="ai-message text-on-surface w-full">
-          ${formatAIResponse(msg.content)}
+          ${isTyping ? data.content : formatAIResponse(data.content)}
         </div>
+        
+        <!-- Interaction Buttons (Functional v1) -->
+        ${!isTyping ? `
+        <div class="flex items-center gap-4 mt-4 transition-all duration-500 delay-300">
+          <button onclick="handleVoiceUI(this)" class="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-black uppercase tracking-widest text-primary hover:scale-105 transition-all active:scale-95 border border-white/5 group">
+            <span class="material-symbols-outlined text-sm group-hover:scale-110 transition-transform">volume_up</span>
+            Listen
+          </button>
+          <div class="h-4 w-[1px] bg-white/10"></div>
+          <button onclick="handleFeedback('${data.id}', 'like', this)" class="material-symbols-outlined text-sm text-on-surface-variant/40 hover:text-green-400 hover:scale-110 transition-all active:scale-90" title="Like">thumb_up</button>
+          <button onclick="handleFeedback('${data.id}', 'dislike', this)" class="material-symbols-outlined text-sm text-on-surface-variant/40 hover:text-red-400 hover:scale-110 transition-all active:scale-90" title="Dislike">thumb_down</button>
+        </div>
+        ` : ''}
       `;
-      container.appendChild(aiDiv);
+    }
+    container.appendChild(div);
+    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
 
-      // Trigger Mermaid Rendering for any new diagrams
+    // Trigger Mermaid Rendering for any new diagrams
+    if (isAssistant && !isTyping) {
       try {
-        await mermaid.run();
+        if (window.mermaid) {
+          await mermaid.run();
+        }
       } catch (e) {
         console.error("Mermaid Render Error:", e);
       }
     }
-    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
   }
+
+  // --- INTERACTION HANDLERS (Premium Fix) ---
+  window.handleVoiceUI = (btn) => {
+    // Find the closest AI message container and get its text
+    const messageContainer = btn.parentElement.previousElementSibling;
+    if (!messageContainer) return;
+
+    const text = messageContainer.innerText;
+    if (!text) return;
+
+    // Reset synthesis in case it's currently speaking
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'hi-IN'; // Hinglish friendly voice
+    utterance.rate = 1.1; 
+
+    // Add visual feedback to button while speaking
+    btn.classList.add('bg-primary/20', 'animate-pulse');
+    utterance.onend = () => btn.classList.remove('bg-primary/20', 'animate-pulse');
+    
+    window.speechSynthesis.speak(utterance);
+    console.log("🔊 Playing audio for:", text.substring(0, 50) + "...");
+  };
+
+  window.handleFeedback = async (msgId, type, btn) => {
+    if (!msgId || !currentSessionId) return;
+    try {
+        const msgRef = doc(db, `chatSessions/${currentUser.uid}/sessions/${currentSessionId}/messages`, msgId);
+        await updateDoc(msgRef, { feedback: type });
+        
+        // Premium Button Feedback
+        btn.classList.add(type === 'like' ? 'text-green-400' : 'text-red-400');
+        btn.style.filter = "drop-shadow(0 0 8px currentColor)";
+        console.log(`✅ Feedback recorded: ${type}`);
+    } catch (err) {
+        console.error("❌ Failed to save feedback:", err);
+    }
+  };
 
   // --- Quick Replies ---
   document.querySelectorAll('#quick-replies button').forEach(btn => {
@@ -513,52 +657,35 @@
   });
 
   async function sendMessage() {
-    console.log("🚀 [DEBUG] sendMessage() started");
     const input = document.getElementById('user-input');
     const content = input.value?.trim();
     
-    console.log("📊 [DEBUG] State check:", { 
-      hasContent: !!content, 
-      hasUser: !!currentUser,
-      uid: currentUser?.uid,
-      sessionId: currentSessionId 
-    });
-
-    if (!content || !currentUser) {
-      console.warn("⚠️ [DEBUG] Stop! Either content is empty or user is not logged in.");
-      return;
-    }
+    if (!content || !currentUser) return;
     
     try {
-      // 1. Immediate UI Feedback
-      console.log("💬 [DEBUG] Appending user message to UI");
       appendMessageUI({ role: 'user', content, timestamp: new Date() });
       input.value = '';
 
-      // 2. Firebase Session Management (Wrapped to prevent blocking AI)
-      console.log("🔥 [DEBUG] Starting Firebase sync...");
-      try {
-        if (!currentSessionId) {
-          const docRef = await addDoc(collection(db, `chatSessions/${currentUser.uid}/sessions`), {
-            title: content.substring(0, 30),
-            updatedAt: serverTimestamp(),
-            type: 'doubt'
-          });
-          currentSessionId = docRef.id;
-        }
-
-        await addDoc(collection(db, `chatSessions/${currentUser.uid}/sessions/${currentSessionId}/messages`), {
-          role: 'user',
-          content,
-          timestamp: serverTimestamp()
+      let isNewSession = false;
+      if (!currentSessionId) {
+        const docRef = await addDoc(collection(db, `chatSessions/${currentUser.uid}/sessions`), {
+          title: content.substring(0, 30),
+          updatedAt: serverTimestamp(),
+          type: 'doubt'
         });
-        console.log("✅ [DEBUG] Firebase sync success");
-      } catch (dbErr) {
-        console.error("❌ [DEBUG] Firebase Sync Failed (Script continuing):", dbErr);
+        currentSessionId = docRef.id;
+        isNewSession = true;
+        loadSessions(currentUser.uid);
       }
 
-      // 3. TRIGGER NETWORK CALL
-      console.log("📡 [DEBUG] TRIGGERING API CALL TO /api/chat");
+      await addDoc(collection(db, `chatSessions/${currentUser.uid}/sessions/${currentSessionId}/messages`), {
+        role: 'user',
+        content,
+        timestamp: serverTimestamp()
+      });
+
+      if (isNewSession) selectSession(currentSessionId);
+      
       await callChatAPI(content);
 
     } catch (globalErr) {
@@ -568,22 +695,44 @@
 
   async function callChatAPI(userText) {
     console.log("🌐 [DEBUG] API Call Started for:", userText);
+    
+    appendMessageUI({ 
+        role: 'assistant', 
+        content: '<div class="flex items-center gap-2"><div class="w-1 h-1 bg-primary rounded-full animate-bounce"></div><div class="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:0.2s]"></div><div class="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:0.4s]"></div></div>Thinking...', 
+        isTyping: true 
+    });
+
     try {
+      const messagesQ = query(
+          collection(db, `chatSessions/${currentUser.uid}/sessions/${currentSessionId}/messages`), 
+          orderBy("timestamp", "desc"), 
+          limit(6)
+      );
+      const messagesSnap = await getDocs(messagesQ);
+      const history = [];
+      messagesSnap.forEach(doc => {
+          const data = doc.data();
+          history.unshift({ role: data.role === 'assistant' ? 'assistant' : 'user', content: data.content });
+      });
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userText })
+        body: JSON.stringify({ 
+            message: userText,
+            messages: history.length > 0 ? history : undefined 
+        })
       });
-      
-      console.log("📥 [DEBUG] API Status Received:", response.status);
-      
+
       const data = await response.json();
+      
+      const typingIndicator = document.getElementById('typing-indicator');
+      if (typingIndicator) typingIndicator.remove();
+
       if (data.error) throw new Error(data.error);
 
       const aiText = data.reply;
-      console.log("🤖 [DEBUG] AI Response:", aiText);
       
-      // Save AI reply and update UI
       await addDoc(collection(db, `chatSessions/${currentUser.uid}/sessions/${currentSessionId}/messages`), {
         role: 'assistant',
         content: aiText,
@@ -596,6 +745,9 @@
 
     } catch (err) {
       console.error("🌪️ [DEBUG] API/Fetch Error:", err);
+      const typingIndicator = document.getElementById('typing-indicator');
+      if (typingIndicator) typingIndicator.remove();
+
       appendMessageUI({ 
         role: 'assistant', 
         content: `❌ **Error:** ${err.message}. \n\n*Make sure you are running 'vercel dev' instead of Live Server!*`, 
@@ -604,10 +756,8 @@
     }
   }
 
-  // EXPOSE TO WINDOW (Ensuring HTML event handlers can find it)
   window.sendMessage = sendMessage;
 
-  // ROBUST EVENT BINDING
   const sendBtn = document.getElementById('send-btn');
   if (sendBtn) {
     sendBtn.onclick = (e) => {

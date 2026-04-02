@@ -58,10 +58,33 @@
             border: var(--glass-border);
         }
         .bot-bubble-glass {
-            background: rgba(35, 43, 20, 0.4);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 24px;
+            margin: 16px 0;
             border: 1px solid rgba(154, 177, 122, 0.1);
+            border-left: 4px solid #9AB17A;
+            color: #cbd5c0; /* Better readability */
+            line-height: 1.8;
+            font-size: 14px;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.3);
+        }
+        .ai-heading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            color: #FBE8CE; /* Cream highlight */
+            font-size: 17px;
+            margin-top: 24px;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+            border-left: 3px solid #9AB17A;
+            padding-left: 12px;
+            margin-left: -24px; /* Align with bubble padding */
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            text-transform: none;
         }
         .message-in {
             animation: slideUp 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
@@ -273,7 +296,56 @@
     return el;
   };
 
-  initAuthGuard(auth);
+  // --- CLEANUP FUNCTION (Requested Fix) ---
+  function cleanAIText(text) {
+    if (!text) return "";
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<b class="text-primary font-black">$1</b>')
+      .replace(/\*/g, '')
+      .replace(/```[a-z]*/g, '')
+      .trim();
+  }
+
+  // --- PREMIUM RESPONSE FORMATTER (v4 Hybrid Sync) ---
+  function formatAIResponse(text) {
+    if (!text) return '';
+    let cleanText = text.trim();
+
+    // 1. Extract Code Blocks
+    const codeBlocks = [];
+    cleanText = cleanText.replace(/```([\s\S]*?)```/g, (match, code) => {
+        const id = `__CODE_BLOCK_${codeBlocks.length}__`;
+        codeBlocks.push(match);
+        return id;
+    });
+
+    // 2. Handle Emoji Headers + Colon Split
+    const emojiHeaderRegex = /^([\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}])\s*(.*)$/gum;
+    let formatted = cleanText.replace(emojiHeaderRegex, (match, emoji, title) => {
+        let cleanTitle = title.replace(/\*\*/g, '').replace(/\*/g, '').trim();
+        const colonIndex = cleanTitle.indexOf(':');
+        if (colonIndex !== -1) {
+            const h = cleanTitle.substring(0, colonIndex).trim();
+            const b = cleanTitle.substring(colonIndex + 1).trim();
+            return `<h3 class="ai-heading">${emoji} ${h}</h3>\n${b}`;
+        }
+        return `<h3 class="ai-heading">${emoji} ${cleanTitle}</h3>`;
+    });
+
+    // 3. Apply cleanAIText
+    const segments = formatted.split(/(<h3.*?<\/h3>)/);
+    formatted = segments.map(seg => {
+        if (seg.startsWith('<h3')) return seg;
+        return cleanAIText(seg);
+    }).join('');
+
+    // 4. Re-insert Code Blocks
+    codeBlocks.forEach((block, i) => {
+        formatted = formatted.replace(`__CODE_BLOCK_${i}__`, marked.parse(block));
+    });
+
+    return formatted;
+  }
 
   const logoutBtns = ['sign-out-btn', 'sidebar-logout-btn'];
   logoutBtns.forEach(id => {
@@ -282,35 +354,42 @@
   });
 
   window.initPage = async (user) => {
+    console.log("🚀 [DEBUG] Room-Bot initPage started for:", user.email);
     currentUser = user;
-    const urlParams = new URLSearchParams(window.location.search);
-    let roomId = urlParams.get('room');
     
-    loadRooms(); // Load sidebar rooms
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        let roomId = urlParams.get('room');
+        
+        // 1. Load sidebar rooms
+        loadRooms(); 
 
-    const userSnap = await getDoc(doc(db, "users", user.uid));
-    const userData = userSnap.exists() ? userSnap.data() : {};
-    
-    safeSet('user-name-display', userData.name || 'Scientist');
-    safeSet('user-email-display', user.email || 'authenticated user');
-    safeSet('user-avatar-initial', (userData.name || 'S').charAt(0).toUpperCase());
+        const userSnap = await getDoc(doc(db, "users", user.uid));
+        const userData = userSnap.exists() ? userSnap.data() : {};
+        
+        safeSet('user-name-display', userData.name || 'Scientist');
+        safeSet('user-email-display', user.email || 'authenticated user');
+        safeSet('user-avatar-initial', (userData.name || 'S').charAt(0).toUpperCase());
 
-    if (roomId) {
-      joinRoom(roomId);
-    } else {
-      const lastRoom = userData.lastActiveRoom;
-      if (lastRoom) {
-        window.location.href = `Room_Bot_chat.html?room=${lastRoom}`;
-      } else {
-        // Find latest public room or create new
-        const roomsQ = query(collection(db, "rooms"), orderBy("createdAt", "desc"), limit(1));
-        const roomsSnap = await getDocs(roomsQ);
-        if (!roomsSnap.empty) {
-          window.location.href = `Room_Bot_chat.html?room=${roomsSnap.docs[0].id}`;
+        if (roomId) {
+          joinRoom(roomId);
         } else {
-          createRoom("Study Session", true); // Auto-create first room
+          const lastRoom = userData.lastActiveRoom;
+          if (lastRoom) {
+            window.location.href = `Room_Bot_chat.html?room=${lastRoom}`;
+          } else {
+            // Find latest public room or create new
+            const roomsQ = query(collection(db, "rooms"), orderBy("createdAt", "desc"), limit(1));
+            const roomsSnap = await getDocs(roomsQ);
+            if (!roomsSnap.empty) {
+              window.location.href = `Room_Bot_chat.html?room=${roomsSnap.docs[0].id}`;
+            } else {
+              createRoom("Study Session", true); // Auto-create first room
+            }
+          }
         }
-      }
+    } catch (err) {
+        console.error("❌ [DEBUG] Room-Bot initPage failed:", err);
     }
 
     // Check for Live Server (Port 5500)
@@ -320,6 +399,10 @@
       if (warning) warning.classList.remove('hidden');
     }
   };
+
+  // Trigger Auth Observer
+  console.log("🛡️ [DEBUG] Starting Auth Guard...");
+  initAuthGuard(auth);
 
   window.joinByCode = async () => {
     const code = prompt("Enter 6-digit Room ID (e.g. 123-456):");
@@ -490,15 +573,14 @@
 
     let html = '';
     if (isAi) {
-      const formattedContent = typeof marked !== 'undefined' ? marked.parse(msg.content) : msg.content;
+      const formattedContent = formatAIResponse(msg.content);
       html = `
         <div class="flex items-start gap-5 max-w-2xl message-in">
           <div class="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0 border border-primary/20">
             <span class="material-symbols-outlined text-primary text-xl" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
           </div>
-          <div class="bot-bubble-glass p-6 rounded-2xl rounded-tl-none relative prose prose-invert prose-sm">
+          <div class="bot-bubble-glass relative">
             ${formattedContent}
-            <div class="absolute -left-2 top-0 w-4 h-4 bg-transparent border-t-[12px] border-t-primary/10 border-r-[12px] border-r-transparent"></div>
           </div>
         </div>
       `;

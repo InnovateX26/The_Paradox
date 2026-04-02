@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Playfair+Display:ital,wght@1,700;1,900&amp;display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script id="tailwind-config">
       tailwind.config = {
         darkMode: "class",
@@ -68,6 +69,29 @@
     }
     .stagger-1 { animation-delay: 0.1s; }
     .stagger-2 { animation-delay: 0.25s; }
+
+    /* Premium AI Heading Sync */
+    .ai-heading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      color: #FBE8CE;
+      font-size: 17px;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+      border-left: 3px solid #9AB17A;
+      padding-left: 12px;
+      margin-left: -24px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    #hinglish-text {
+      color: #cbd5c0;
+      line-height: 1.8;
+      font-size: 14px;
+    }
     </style>
 </head>
 <body class="bg-dark-4 font-body text-on-surface min-h-screen overflow-x-hidden">
@@ -297,10 +321,48 @@
   
   let currentUser = null;
   let studyStartTime = null;
+  let autoSaveInterval = null;
   let timerInterval = null;
   let currentDocId = null;
 
-  initAuthGuard(auth);
+  // --- CLEANUP FUNCTION (Requested Fix: Remove *) ---
+  function cleanAIText(text) {
+    if (!text) return "";
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<b class="text-primary font-black">$1</b>')
+      .replace(/\*/g, '')
+      .replace(/```[a-z]*/g, '')
+      .trim();
+  }
+
+  // --- PREMIUM RESPONSE FORMATTER (v4 Hybrid Sync) ---
+  function formatAIResponse(text) {
+    if (!text) return '';
+    let cleanText = text.trim();
+
+    // 1. Handle Emoji Headers + Colon Split
+    const emojiHeaderRegex = /^([\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}])\s*(.*)$/gum;
+    let formatted = cleanText.replace(emojiHeaderRegex, (match, emoji, title) => {
+        let cleanTitle = title.replace(/\*\*/g, '').replace(/\*/g, '').trim();
+        const colonIndex = cleanTitle.indexOf(':');
+        if (colonIndex !== -1) {
+            const h = cleanTitle.substring(0, colonIndex).trim();
+            const b = cleanTitle.substring(colonIndex + 1).trim();
+            return `<h3 class="ai-heading">${emoji} ${h}</h3>\n${b}`;
+        }
+        return `<h3 class="ai-heading">${emoji} ${cleanTitle}</h3>`;
+    });
+
+    // 2. Apply cleanAIText
+    const segments = formatted.split(/(<h3.*?<\/h3>)/);
+    formatted = segments.map(seg => {
+        if (seg.startsWith('<h3')) return seg;
+        return cleanAIText(seg);
+    }).join('');
+
+    // 3. Final marked pass
+    return marked.parse(formatted);
+  }
 
   const logoutBtns = ['sign-out-btn', 'sidebar-logout-btn'];
   logoutBtns.forEach(id => {
@@ -309,15 +371,29 @@
   });
 
   window.initPage = async (user) => {
+    console.log("🚀 [DEBUG] Scan-Explain initPage started for:", user.email);
     currentUser = user;
-    const userDoc = await getDoc(doc(db, "users", user.uid));
-    if (userDoc.exists()) {
-      const userData = userDoc.data();
-      document.getElementById('user-name-display').textContent = userData.name || 'Student';
-      document.getElementById('user-email-display').textContent = user.email || 'authenticated user';
-      document.getElementById('user-avatar-initial').textContent = (userData.name || 'S').charAt(0).toUpperCase();
+    
+    try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          safeSet('user-name-display', userData.name || 'Student');
+          safeSet('user-email-display', user.email || 'authenticated user');
+          safeSet('user-avatar-initial', (userData.name || 'S').charAt(0).toUpperCase());
+        } else {
+          safeSet('user-name-display', 'Student');
+          safeSet('user-email-display', user.email || 'authenticated user');
+          safeSet('user-avatar-initial', 'S');
+        }
+    } catch (err) {
+        console.error("❌ [DEBUG] Scan-Explain initPage failed:", err);
     }
   };
+
+  // Trigger Auth Observer
+  console.log("🛡️ [DEBUG] Starting Auth Guard...");
+  initAuthGuard(auth);
 
   // --- SENIOR FIX: Robust OCR Pipeline ---
   const uploadZone = document.getElementById('upload-zone');
@@ -435,21 +511,56 @@
         const secs = (elapsed % 60).toString().padStart(2, '0');
         document.getElementById('study-timer').textContent = `${mins}:${secs}`;
     }, 1000);
+
+    // --- SMART AUTO-SAVE: Every 30 seconds ---
+    if (autoSaveInterval) clearInterval(autoSaveInterval);
+    autoSaveInterval = setInterval(async () => {
+        if (!currentDocId || !currentUser) return;
+        const elapsedMins = Math.ceil((Date.now() - studyStartTime) / 60000);
+        try {
+            await updateDoc(doc(db, `scans/${currentUser.uid}/history`, currentDocId), {
+                duration: elapsedMins
+            });
+            console.log("💾 [AUTO-SAVE] Synced study duration:", elapsedMins, "mins");
+        } catch (err) {
+            console.warn("⚠️ [AUTO-SAVE] Failed to sync:", err.message);
+        }
+    }, 30000);
   }
 
   function displayResult(explanationText, rawText, scanData) {
+    // Ensure all previous states are hidden
+    document.getElementById('initial-state').classList.add('hidden');
     document.getElementById('loading-state').classList.add('hidden');
+    
     document.getElementById('result-display').classList.remove('hidden');
     document.getElementById('output-footer').classList.remove('hidden');
 
     // Display the unified explanation in the Hinglish panel
-    document.getElementById('topic-heading').textContent = "Lab Report";
-    document.getElementById('subject-badge').textContent = "STEM Note";
-    document.getElementById('hinglish-text').innerHTML = explanationText.replace(/\n/g, '<br>');
+    document.getElementById('topic-heading').textContent = scanData.topic || "Untitled Scan";
+    
+    const subjectList = ['Physics', 'Chemistry', 'Maths', 'Biology', 'Computer'];
+    let rawSub = scanData.subject || "Biology";
+    let finalSubject = rawSub.charAt(0).toUpperCase() + rawSub.slice(1).toLowerCase();
+    
+    if (!subjectList.includes(finalSubject)) {
+        // Simple keyword check if the AI doesn't categorize perfectly
+        if (rawText.toLowerCase().includes('python') || rawText.toLowerCase().includes('code') || rawText.toLowerCase().includes('algorithm')) {
+            finalSubject = "Computer";
+        } else {
+            finalSubject = "Biology"; 
+        }
+    }
+    
+    document.getElementById('subject-badge').textContent = finalSubject;
+    document.getElementById('hinglish-text').innerHTML = formatAIResponse(explanationText || "Preparing your explanation...");
     
     // Hide details that are no longer separately structured in the new API
-    document.getElementById('analogy-text').parentElement.classList.add('hidden');
-    document.getElementById('exam-tip').parentElement.classList.add('hidden');
+    // Using more robust selectors
+    const analogyBox = document.getElementById('analogy-text')?.closest('div.bg-primary\\/5');
+    const examTipBox = document.getElementById('exam-tip')?.closest('div.bg-white\\/5');
+    if (analogyBox) analogyBox.classList.add('hidden');
+    if (examTipBox) examTipBox.classList.add('hidden');
     document.getElementById('difficulty-badge').classList.add('hidden');
     
     const termsContainer = document.getElementById('key-terms');
@@ -457,21 +568,17 @@
 
     startStudyTimer();
     
-    // Fallback and Normalize subject to ensure dashboard matches
-    const subjectList = ['Physics', 'Chemistry', 'Maths', 'Biology'];
-    let rawSub = scanData.subject || "Biology";
-    let finalSubject = rawSub.charAt(0).toUpperCase() + rawSub.slice(1).toLowerCase();
-    if (!subjectList.includes(finalSubject)) finalSubject = "Biology"; 
-
-    saveToHistory(explanationText, rawText, finalSubject);
+    saveToHistory(explanationText, rawText, finalSubject, scanData.topic || "Untitled Scan");
   }
 
-  async function saveToHistory(explanation, text, subject) {
+  async function saveToHistory(explanation, text, subject, topic) {
     if (!currentUser) return;
+    const cleanTopic = topic.replace(/[*_`#]/g, '').trim();
     const docRef = await addDoc(collection(db, `scans/${currentUser.uid}/history`), {
       explanation,
       originalText: text,
       subject: subject,
+      topic: cleanTopic,
       duration: 0, // Initial duration
       scannedAt: serverTimestamp()
     });
@@ -483,14 +590,15 @@
     const elapsedMins = Math.ceil((Date.now() - studyStartTime) / 60000);
     
     try {
-        console.log(`📡 Updating duration for ${currentDocId}: ${elapsedMins} mins`);
-        // Update the final duration
+        console.log(`📡 Final Sync for ${currentDocId}: ${elapsedMins} mins`);
+        if (autoSaveInterval) clearInterval(autoSaveInterval);
+        if (timerInterval) clearInterval(timerInterval);
+        
         await updateDoc(doc(db, `scans/${currentUser.uid}/history`, currentDocId), {
             duration: elapsedMins
         });
 
-        clearInterval(timerInterval);
-        alert(`Studied for ${elapsedMins} minute(s). Dashboard updated!`);
+        alert(`Great job studying! ${elapsedMins} min(s) recorded. Dashboard updated!`);
         window.location.href = 'Dashboard.html';
     } catch (err) {
         console.error("❌ Failed to update duration:", err);

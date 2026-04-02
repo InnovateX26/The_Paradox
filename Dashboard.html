@@ -188,8 +188,8 @@
 <div class="absolute -right-10 -top-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-all duration-700"></div>
 <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
 <div>
-<h1 class="text-4xl md:text-5xl font-black font-headline text-on-surface tracking-tighter mb-2">
-                                Kya haal hai, <span class="inline-block transition-transform hover:scale-110 cursor-default">Student!</span> 🌿
+                            <h1 class="text-4xl md:text-5xl font-black font-headline text-on-surface tracking-tighter mb-2 leading-tight">
+                                Kya haal hai, <span class="inline-block transition-transform hover:scale-105 cursor-default">Student! 🌿</span>
                             </h1>
 <p class="text-on-surface-variant text-lg font-medium">Ready to break some STEM barriers today?</p>
 </div>
@@ -263,6 +263,16 @@
 <div id="biology-bar" class="h-full activity-gradient rounded-full fill-animate" style="width: 0%; animation-delay: 1.1s;"></div>
 </div>
 </div>
+<!-- Computer -->
+<div class="space-y-3 group">
+<div class="flex justify-between text-xs font-black uppercase tracking-tighter text-on-surface-variant">
+<span>Computer</span>
+<span>0 Scans</span>
+</div>
+<div class="relative w-full h-3 bg-white/5 rounded-full overflow-hidden flex items-center">
+<div id="computer-bar" class="h-full activity-gradient rounded-full fill-animate" style="width: 0%; animation-delay: 1.2s;"></div>
+</div>
+</div>
 </div>
 </div>
 <!-- Weak Areas Pill Cards -->
@@ -329,8 +339,6 @@
 
   let currentUser = null;
 
-  initAuthGuard(auth);
-
   const logoutBtns = ['sign-out-btn', 'sidebar-logout-btn'];
   logoutBtns.forEach(id => {
     const btn = document.getElementById(id);
@@ -338,27 +346,35 @@
   });
 
   window.initPage = async (user) => {
+    console.log("🚀 [DEBUG] Dashboard initPage started for:", user.email);
     currentUser = user;
-    console.log("🚀 Initializing Dashboard for:", user.email);
     
-    // STEP 1: API Initiation
-    loadDashboard(user.uid);
-    loadRecentActivity(user.uid);
+    try {
+        // STEP 1: API Initiation
+        loadDashboard(user.uid);
+        loadRecentActivity(user.uid);
 
-    const userDocRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userDocRef);
-    
-    if (userSnap.exists()) {
-      const userData = userSnap.data();
-      updateDashboardUIHeader(userData);
-      updateStreak(userDocRef, userData);
-    } else {
-      console.log("📝 New User Detected - creating basic profile...");
-      const basicData = { name: user.displayName || 'Student', streak: 1, lastActiveDate: new Date().toISOString().split('T')[0] };
-      updateDashboardUIHeader(basicData);
-      await setDoc(userDocRef, basicData, { merge: true });
+        const userDocRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userDocRef);
+        
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          updateDashboardUIHeader(userData);
+          updateStreak(userDocRef, userData);
+        } else {
+          console.log("📝 New User Detected - creating basic profile...");
+          const basicData = { name: user.displayName || 'Student', streak: 1, lastActiveDate: new Date().toISOString().split('T')[0] };
+          updateDashboardUIHeader(basicData);
+          await setDoc(userDocRef, basicData, { merge: true });
+        }
+    } catch (err) {
+        console.error("❌ [DEBUG] Dashboard initPage failed:", err);
     }
   };
+
+  // Trigger Auth Observer
+  console.log("🛡️ [DEBUG] Starting Auth Guard...");
+  initAuthGuard(auth);
 
   async function loadDashboard(uid) {
     console.log("STEP 1: Dashboard Loading Triggered");
@@ -372,7 +388,7 @@
       console.log("STEP 3: Firestore Query Status: 200 (Success)");
       console.log(`📊 Found ${querySnapshot.size} study records`);
 
-      const focus = { physics: 0, chemistry: 0, maths: 0, biology: 0 };
+      const focus = { physics: 0, chemistry: 0, maths: 0, biology: 0, computer: 0 };
       const weakAreasSet = new Set();
 
       querySnapshot.forEach(doc => {
@@ -388,8 +404,12 @@
         }
 
         // Add topic as weak area if study time is low
-        if (duration < 15 && data.topic) {
-          weakAreasSet.add(data.topic);
+        if (duration < 15) {
+          let topicName = data.topic;
+          if (!topicName && data.originalText) {
+            topicName = data.originalText.substring(0, 30).trim() + "...";
+          }
+          if (topicName) weakAreasSet.add(cleanTopic(topicName));
         }
       });
 
@@ -420,6 +440,7 @@
     setBarValue("chemistry", data.focus.chemistry);
     setBarValue("maths", data.focus.maths);
     setBarValue("biology", data.focus.biology);
+    setBarValue("computer", data.focus.computer);
 
     // Total Duration Chip
     const totalMins = Object.values(data.focus).reduce((a, b) => a + b, 0);
@@ -506,15 +527,22 @@
         <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
           <span class="material-symbols-outlined text-primary text-xl">${getSubjectIcon(data.subject)}</span>
         </div>
-        <h4 class="font-black text-on-surface uppercase tracking-tight leading-tight">${data.topic || 'Untitled Scan'}</h4>
-        <p class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mt-3">${timeAgo(data.scannedAt)}</p>
+        <div class="flex-1 min-w-0">
+          <h4 class="font-black text-on-surface uppercase tracking-tight leading-tight truncate">${cleanTopic(data.topic) || 'Untitled Scan'}</h4>
+          <p class="text-[10px] text-on-surface-variant font-bold mt-1 uppercase tracking-widest">${data.subject || 'General'} • ${timeAgo(data.scannedAt)}</p>
+        </div>
       `;
       container.appendChild(card);
     });
   }
 
+  function cleanTopic(text) {
+    if (!text) return "";
+    return text.replace(/[*_`#]/g, '').trim();
+  }
+
   function getSubjectIcon(sub) {
-    const icons = { Physics: 'science', Chemistry: 'biotech', Maths: 'calculate', Biology: 'psychology' };
+    const icons = { Physics: 'science', Chemistry: 'biotech', Maths: 'calculate', Biology: 'psychology', Computer: 'terminal' };
     return icons[sub] || 'menu_book';
   }
 

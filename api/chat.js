@@ -57,15 +57,51 @@ export default async function handler(req, res) {
       })
     });
 
-    const data = await response.json();
-    if (data.error) throw new Error(data.error.message || 'OpenRouter API Error');
+    if (!response.ok) {
+       const errBody = await response.text();
+       console.warn(`⚠️ OpenRouter Failed (Status ${response.status}). Attempting Gemini Fallback...`);
+       throw new Error(`OpenRouter Error: ${response.status}`);
+    }
 
+    const data = await response.json();
     const reply = data.choices?.[0]?.message?.content || "Sorry, I couldn't generate a reply.";
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.status(200).json({ reply, message: reply }); // Support both formats
+    return res.status(200).json({ reply, message: reply });
 
   } catch (err) {
-    console.error('Chat API Error:', err);
-    res.status(500).json({ error: 'Internal Server Error', details: err.message });
+    console.error('Chat API Warning (Attempting Fallback):', err.message);
+    
+    // --- SECONDARY CALL: GOOGLE GEMINI BACKUP ---
+    try {
+      console.log("🚀 [BACKUP] Calling Gemini 2.5 Flash...");
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
+      
+      const geminiRes = await fetch(geminiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: finalMessages.map(m => ({
+            role: m.role === "assistant" ? "model" : "user",
+            parts: [{ text: m.content }]
+          })).filter(m => m.role !== "system")
+        })
+      });
+
+      const geminiData = await geminiRes.json();
+      const reply = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+      
+      if (reply) {
+        console.log("✅ [BACKUP] Gemini Success!");
+        return res.status(200).json({ reply, message: reply });
+      } else {
+        throw new Error("Gemini fallback also failed.");
+      }
+    } catch (fallbackErr) {
+      console.error('❌ CRITICAL: All AI Engines Failed:', fallbackErr.message);
+      return res.status(500).json({ 
+        error: 'Service Interrupted', 
+        details: 'Primary and Backup AI engines are both unavailable. Please check API credits.' 
+      });
+    }
   }
 }
